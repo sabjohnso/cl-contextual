@@ -1,0 +1,18 @@
+#!/bin/bash
+#|
+
+set -euo pipefail
+scriptdir=$(cd $(dirname $0) && pwd)
+scriptpath=$scriptdir/$(basename $0)
+sbcl --script $scriptpath
+exit $?
+|#
+
+(require :asdf)
+
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+
+(asdf:load-system :contextual)
+(asdf:test-system :contextual)
