@@ -15,8 +15,9 @@
   :components
   ((:module "src"
     :components
-    ((:file syntax-helpers)
-     (:file contextual))))
+    ((:file "syntax-helpers")
+     (:file "internal")
+     (:file "contextual"))))
   :in-order-to ((test-op
                  (load-op :contextual)
                  (test-op :contextual/test))))
@@ -29,7 +30,9 @@
     :serial t
     :components
     ((:file "syntax-helpers-test")
+     (:file "internal-test")
      (:file "contextual-test"))))
   :perform (test-op (o s)
              (symbol-call :binding-syntax-helpers-test :run-all-tests!)
+             (symbol-call :contextual-internal-test :run-all-tests!)
              (symbol-call :contextual-test :run-all-tests!)))

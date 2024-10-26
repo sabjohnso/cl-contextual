@@ -75,6 +75,7 @@
            (cdr more-exprs))))))
 
 (defun make-monad-progn (progn-name &key flatmap body more-body)
+  (declare (type symbol progn-name flatmap))
   (if (null more-body)
       body
       (let ((ignored (gensym "IGNORED"))
@@ -85,6 +86,7 @@
                    ,body))))
 
 (defun make-monad-binding (let-name &key flatmap monad-progn binding more-bindings body more-body)
+  (declare (type symbol let-name flatmap))
   (if (null more-bindings)
       (destructuring-bind (var expr) binding
         (let ((body (macroexpand `(,monad-progn ,body ,@more-body))))
