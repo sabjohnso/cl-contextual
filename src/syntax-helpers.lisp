@@ -27,6 +27,7 @@
 
 
 (defun make-functor-binding (let-name &key fmap binding more-bindings body more-body)
+  "Return syntax for functor binding"
   (declare
    (type symbol let-name fmap)
    (type binding-pair binding)
@@ -43,11 +44,11 @@
         (macroexpand `(,let-name (,binding)
                                  ,body)))))
 
-(defun make-curried-function (var vars body more-body)
-  (if (null vars)
+(defun make-curried-function (var more-vars body more-body)
+  (if (null more-vars)
       `(lambda (,var) ,body ,@more-body)
       `(lambda (,var)
-         ,(make-curried-function (car vars) (cdr vars) body more-body))))
+         ,(make-curried-function (car more-vars) (cdr more-vars) body more-body))))
 
 (defun make-applicative-application (fapply fun expr more-exprs)
   (declare (type symbol fapply)
@@ -55,13 +56,16 @@
            (type t expr)
            (type list more-exprs))
   (let ((app `(,fapply ,fun ,expr)))
-    (if (null more-exprs)
-        app
-        (make-applicative-binding fapply app (car more-exprs) (cdr more-exprs)))))
+    (if (null more-exprs) app
+        (make-applicative-application fapply app (car more-exprs) (cdr more-exprs)))))
 
 (defun make-applicative-binding (let-name &key fmap fapply binding more-bindings body more-body)
-  (declare (type symbol let-name fmap fapply)
+  "Return syntax transformed for applicative binding."
+  (declare (ignore let-name)
+           (type symbol fmap fapply)
            (type list binding))
+  (assert (listp binding))
+  (assert (= 2 (length binding)))
   (destructuring-bind (var expr) binding
     (if (null more-bindings)
         `(,fmap (lambda (,var) ,body ,@more-body) ,expr)
@@ -75,6 +79,7 @@
            (cdr more-exprs))))))
 
 (defun make-monad-progn (progn-name &key flatmap body more-body)
+  "Return syntax transformed for a monadic progn"
   (declare (type symbol progn-name flatmap))
   (if (null more-body)
       body
@@ -86,6 +91,7 @@
                    ,body))))
 
 (defun make-monad-binding (let-name &key flatmap monad-progn binding more-bindings body more-body)
+  "Return syntax transformed for monadic binding"
   (declare (type symbol let-name flatmap))
   (if (null more-bindings)
       (destructuring-bind (var expr) binding

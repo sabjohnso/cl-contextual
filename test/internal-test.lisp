@@ -103,12 +103,13 @@ without adding an additional contextual expression layer"
     (is-true (contextual-p cx))
     (is (= 4 (ctx-run 3 cx))))
 
-  "It creates only creates one layer regardless of the number of binding pairs"
+  "It only creates one layer regardless of the number of binding pairs"
   (let ((cx (let-app/ctx ((x (ctx-return 3))
-                          (y (ctx-ask)))
-              (+ x y))))
+                          (y (ctx-ask))
+                          (z (ctx-asks #'1+)))
+              (+ x y z))))
     (is-true (contextual-p cx))
-    (is (= 7 (ctx-run 4 cx)))))
+    (is (= 12 (ctx-run 4 cx)))))
 
 
 (test let-mon/ctx
