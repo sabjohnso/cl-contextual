@@ -1,14 +1,12 @@
 (in-package :cl-user)
 
 (defpackage :contextual-test
-  (:use :cl :5am :contextual)
+  (:use :cl :5am :contextual-utility :contextual)
   (:export #:run-all-tests!))
 
 (in-package :contextual-test)
 
-(defmacro define-constant (name value &optional doc)
-  `(defconstant ,name (if (boundp ',name) (symbol-value ',name) ,value)
-                      ,@(when doc (list doc))))
+
 
 (defun run-all-tests! ()
   (run! 'contextual))

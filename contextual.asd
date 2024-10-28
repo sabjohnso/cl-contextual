@@ -15,10 +15,12 @@
   :components
   ((:module "src"
     :components
-    ((:file "syntax-helpers")
+    ((:file "utility")
+     (:file "syntax-helpers")
      (:file "internal")
      (:file "derivation")
-     (:file "contextual"))))
+     (:file "contextual")
+     (:file "list"))))
   :in-order-to ((test-op
                  (load-op :contextual)
                  (test-op :contextual/test))))
@@ -33,9 +35,11 @@
     ((:file "syntax-helpers-test")
      (:file "internal-test")
      (:file "derivation-test")
-     (:file "contextual-test"))))
+     (:file "contextual-test")
+     (:file "list-test"))))
   :perform (test-op (o s)
              (symbol-call :binding-syntax-helpers-test :run-all-tests!)
              (symbol-call :contextual-internal-test :run-all-tests!)
              (symbol-call :contextual-derivation-test :run-all-tests!)
-             (symbol-call :contextual-test :run-all-tests!)))
+             (symbol-call :contextual-test :run-all-tests!)
+             (symbol-call :contextual-list-test :run-all-tests!)))
