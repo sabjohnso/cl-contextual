@@ -16,7 +16,7 @@
 (in-suite binding-syntax-helpers)
 
 (defmacro let/fun (((var expr) &rest more-bindings) body &body more-body)
-  (make-functor-binding
+  (make-sequential-functor-binding
    'let/fun
    :fmap 'fmap
    :binding `(,var ,expr)
@@ -24,7 +24,7 @@
    :body body
    :more-body more-body))
 
-(test make-functor-binding
+(test make-sequential-functor-binding
   (is (equal
        '(fmap (lambda (x) (* x x)) 3)
        (macroexpand
@@ -40,7 +40,7 @@
 
 
 (defmacro let/app (((var expr) &rest more-bindings) body &body more-body)
-  (make-applicative-binding
+  (make-parallel-applicative-binding
    'let/app
    :fmap 'fmap
    :fapply 'fapply
@@ -50,7 +50,7 @@
    :more-body more-body))
 
 
-(test make-applicative-binding
+(test make-parallel-applicative-binding
   (is (equal
        '(fmap (lambda (x) (* x x)) 3)
        (macroexpand
@@ -96,7 +96,7 @@
 
 
 (defmacro let/mon (((var expr) &rest more-bindings) body &body more-body)
-  (make-monad-binding
+  (make-sequential-monad-binding
    'let/mon
    :flatmap 'flatmap
    :monad-progn 'progn/mon
@@ -105,7 +105,7 @@
    :body body
    :more-body more-body))
 
-(test make-monad-binding
+(test make-sequential-monad-binding
   (is (equal
        '(flatmap (lambda (x) (1+ x)) 3)
        (macroexpand

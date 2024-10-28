@@ -3,10 +3,10 @@
 (defpackage :binding-syntax-helpers
   (:use :cl)
   (:export
-   #:make-functor-binding
-   #:make-applicative-binding
+   #:make-sequential-functor-binding
+   #:make-parallel-applicative-binding
    #:make-monad-progn
-   #:make-monad-binding))
+   #:make-sequential-monad-binding))
 
 (in-package :binding-syntax-helpers)
 
@@ -26,8 +26,8 @@
   '(satisfies binding-pair-list-p))
 
 
-(defun make-functor-binding (let-name &key fmap binding more-bindings body more-body)
-  "Return syntax for functor binding"
+(defun make-sequential-functor-binding (let-name &key fmap binding more-bindings body more-body)
+  "Return syntax for sequential functor bindings"
   (declare
    (type symbol let-name fmap)
    (type binding-pair binding)
@@ -59,8 +59,8 @@
     (if (null more-exprs) app
         (make-applicative-application fapply app (car more-exprs) (cdr more-exprs)))))
 
-(defun make-applicative-binding (let-name &key fmap fapply binding more-bindings body more-body)
-  "Return syntax transformed for applicative binding."
+(defun make-parallel-applicative-binding (let-name &key fmap fapply binding more-bindings body more-body)
+  "Return syntax transformed for parallel applicative binding."
   (declare (ignore let-name)
            (type symbol fmap fapply)
            (type list binding))
@@ -90,8 +90,8 @@
                      ,expanded-body)
                    ,body))))
 
-(defun make-monad-binding (let-name &key flatmap monad-progn binding more-bindings body more-body)
-  "Return syntax transformed for monadic binding"
+(defun make-sequential-monad-binding (let-name &key flatmap monad-progn binding more-bindings body more-body)
+  "Return syntax transformed for sequential monadic binding"
   (declare (type symbol let-name flatmap))
   (if (null more-bindings)
       (destructuring-bind (var expr) binding

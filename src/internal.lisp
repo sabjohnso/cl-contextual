@@ -12,9 +12,9 @@
            #:ctx-flatten
            #:ctx-ask
            #:ctx-asks
-           #:let-fun/ctx
+           #:let*-fun/ctx
            #:let-app/ctx
-           #:let-mon/ctx))
+           #:let*-mon/ctx))
 
 (in-package :contextual-internal)
 
@@ -70,9 +70,9 @@
 
 
 
-(defmacro let-fun/ctx (((var expr) &rest more-bindings) body &body more-body)
-  (make-functor-binding
-   'let-fun/ctx
+(defmacro let*-fun/ctx (((var expr) &rest more-bindings) body &body more-body)
+  (make-sequential-functor-binding
+   'let*-fun/ctx
    :fmap 'ctx-fmap
    :binding `(,var ,expr)
    :more-bindings more-bindings
@@ -80,7 +80,7 @@
    :more-body more-body))
 
 (defmacro let-app/ctx (((var expr) &rest more-bindings) body &body more-body)
-  (make-applicative-binding
+  (make-parallel-applicative-binding
    'let-app/ctx
    :fmap 'ctx-fmap
    :fapply 'ctx-fapply
@@ -96,9 +96,9 @@
    :body body
    :more-body more-body))
 
-(defmacro let-mon/ctx (((var expr) &rest more-bindings) body &body more-body)
-  (make-monad-binding
-   'let-mon/ctx
+(defmacro let*-mon/ctx (((var expr) &rest more-bindings) body &body more-body)
+  (make-sequential-monad-binding
+   'let*-mon/ctx
    :monad-progn 'progn-mon/ctx
    :flatmap 'ctx-flatmap
    :binding `(,var ,expr)

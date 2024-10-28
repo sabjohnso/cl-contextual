@@ -7,7 +7,7 @@
 
 (defsystem :contextual
   :description "Tools for functors, applicative functors and monads."
-  :version "0.1.0"
+  :version "0.2.0"
   :author "Samuel B. Johnson <sabjohnso.dev@gmail.com>"
   :license "MIT"
   :depends-on (:trivia)

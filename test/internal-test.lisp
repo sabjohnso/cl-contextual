@@ -80,16 +80,16 @@ without adding an additional contextual expression layer"
     (is-true (contextual-p cx))
     (is (equal "E" (ctx-run 'e cx)))))
 
-(test let-fun/ctx
+(test let*-fun/ctx
   "It is a functor binding form."
-  (let ((cx (let-fun/ctx ((x (ctx-ask)))
+  (let ((cx (let*-fun/ctx ((x (ctx-ask)))
               (1+ x))))
     (is-true (contextual-p cx))
     (is (= 4 (ctx-run 3 cx))))
 
   "It creates an addditional contextual expression layer for each binding pair"
-  (let ((cx (let-fun/ctx ((x (ctx-return 3))
-                          (y (ctx-ask)))
+  (let ((cx (let*-fun/ctx ((x (ctx-return 3))
+                           (y (ctx-ask)))
               (+ x y))))
     (is-true (contextual-p cx))
     (is-true (contextual-p (ctx-run 4 cx)))
@@ -112,9 +112,9 @@ without adding an additional contextual expression layer"
     (is (= 12 (ctx-run 4 cx)))))
 
 
-(test let-mon/ctx
+(test let*-mon/ctx
   "It is a monadic binding form"
-  (let ((cx (let-mon/ctx ((x (ctx-asks (lambda (e) (cdr (assoc 'x e)))))
+  (let ((cx (let*-mon/ctx ((x (ctx-asks (lambda (e) (cdr (assoc 'x e)))))
                           (y (ctx-asks (lambda (e) (cdr (assoc 'y e))))))
               (ctx-return (+ x y)))))
     (is-true (contextual-p cx))

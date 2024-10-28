@@ -12,7 +12,7 @@
    #:pure-func #:fapply-func #:product-func
    #:flatmap-func #:flatten-func
    #:wrap-func #:unwrap-func
-   #:let-fun #:let-app #:let-mon
+   #:let*-fun #:let-app #:let*-mon
    #:lift #:lift2 #:lift3 #:lift4 #:lift5 #:lift6 #:lift7
 
    #:functor-operators
@@ -65,9 +65,15 @@
   "Given a function and an embelished value, return a
 contexual expression with the embellishment of the result
 of applyin the function to the value."
-  (let-app/ctx ((fmap (ask-fmap))
+  (let-app/ctx ((ctx (ctx-ask))
+                (fmap (ask-fmap))
                 (mx (ctx-injest cmx)))
-    (funcall fmap f mx)))
+    (funcall fmap (lambda (x)
+                    (let ((result (funcall f x)))
+                      (if (contextual-p result)
+                          (ctx-run ctx result)
+                          result)))
+             mx)))
 
 (defun pure (cx)
   "Return a contextual expression with the input value injected into
@@ -138,9 +144,9 @@ stripped from the input, which has multiple layers of embellishment."
     (funcall unwrap mx)))
 
 
-(defmacro let-fun (((var expr) &rest more-bindings) body &body more-body)
-  (make-functor-binding
-   'let-fun
+(defmacro let*-fun (((var expr) &rest more-bindings) body &body more-body)
+  (make-sequential-functor-binding
+   'let*-fun
    :fmap 'fmap
    :binding `(,var ,expr)
    :more-bindings more-bindings
@@ -148,7 +154,7 @@ stripped from the input, which has multiple layers of embellishment."
    :more-body more-body))
 
 (defmacro let-app (((var expr) &rest more-bindings) body &body more-body)
-  (make-applicative-binding
+  (make-parallel-applicative-binding
    'let-app
    :fmap 'fmap
    :fapply 'fapply
@@ -164,9 +170,9 @@ stripped from the input, which has multiple layers of embellishment."
    :body body
    :more-body more-body))
 
-(defmacro let-mon (((var expr) more-bindings) body &body more-body)
-  (make-monad-binding
-   'let-mon
+(defmacro let*-mon (((var expr) &rest more-bindings) body &body more-body)
+  (make-sequential-monad-binding
+   'let*-mon
    :flatmap 'flatmap
    :monad-progn 'progn-mon
    :binding `(,var ,expr)
