@@ -3,10 +3,12 @@
 (defpackage :binding-syntax-helpers
   (:use :cl)
   (:export
-   #:make-sequential-functor-binding
-   #:make-parallel-applicative-binding
    #:make-monad-progn
-   #:make-sequential-monad-binding))
+   #:make-sequential-functor-binding
+   #:make-sequential-monad-binding
+   #:make-parallel-monad-binding
+   #:make-parallel-applicative-binding
+   #:make-parallel-functor-binding))
 
 (in-package :binding-syntax-helpers)
 
@@ -24,6 +26,9 @@
 
 (deftype binding-pair-list ()
   '(satisfies binding-pair-list-p))
+
+(defun gensym-like (sym)
+  (gensym (symbol-name sym)))
 
 
 (defun make-sequential-functor-binding (let-name &key fmap binding more-bindings body more-body)
@@ -43,6 +48,17 @@
                        ,@more-body))))
         (macroexpand `(,let-name (,binding)
                                  ,body)))))
+
+(defun make-parallel-functor-binding (let-name &key let-sequential binding more-bindings body more-body)
+  (let* ((bindings (cons binding more-bindings))
+         (vars (mapcar #'car bindings))
+         (exprs (mapcar #'cadr bindings))
+         (new-vars (mapcar #'gensym-like vars))
+         (rebindings (mapcar #'list vars new-vars))
+         (body (macroexpand `(,let-sequential (,@rebindings)
+                                ,body
+                                ,@more-body))))
+    `(funcall (lambda (,@new-vars) ,body) ,@exprs)))
 
 (defun make-curried-function (var more-vars body more-body)
   (if (null more-vars)
@@ -99,3 +115,23 @@
           `(,flatmap (lambda (,var) ,body) ,expr)))
       (let ((body (macroexpand `(,let-name (,@more-bindings) ,body ,@more-body))))
         (macroexpand `(,let-name (,binding) ,body)))))
+
+(defun make-parallel-monad-binding (let-name &key flatmap sequential-let-name monad-progn binding more-bindings body more-body)
+  (declare (ignore let-name))
+  (if (null more-bindings)
+      `(,sequential-let-name (,binding) ,body ,@more-body)
+      (flet ((gensym-like (sym) (gensym (symbol-name sym))))
+        (let* ((bindings (cons binding more-bindings))
+               (vars (mapcar #'car bindings))
+               (new-vars (mapcar #'gensym-like vars))
+               (exprs (mapcar #'cadr bindings))
+               (rebindings (mapcar #'list vars new-vars))
+               (body (make-sequential-monad-binding sequential-let-name
+                         :flatmap flatmap
+                         :monad-progn monad-progn
+                         :binding (car rebindings)
+                         :more-bindings (cdr rebindings)
+                         :body body
+                         :more-body more-body)))
+          `(funcall (lambda (,@new-vars) ,body)
+                    ,@exprs)))))

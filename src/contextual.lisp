@@ -12,7 +12,7 @@
    #:pure-func #:fapply-func #:product-func
    #:flatmap-func #:flatten-func
    #:wrap-func #:unwrap-func
-   #:let*-fun #:let-app #:let*-mon
+   #:let*-fun #:let-fun #:let-app #:let*-mon #:let-mon
    #:lift #:lift2 #:lift3 #:lift4 #:lift5 #:lift6 #:lift7
 
    #:functor-operators
@@ -153,6 +153,15 @@ stripped from the input, which has multiple layers of embellishment."
    :body body
    :more-body more-body))
 
+(defmacro let-fun (((var expr) &rest more-bindings) body &body more-body)
+  (make-parallel-functor-binding
+   'let-fun
+   :let-sequential 'let*-fun
+   :binding `(,var ,expr)
+   :more-bindings more-bindings
+   :body body
+   :more-body more-body))
+
 (defmacro let-app (((var expr) &rest more-bindings) body &body more-body)
   (make-parallel-applicative-binding
    'let-app
@@ -174,6 +183,17 @@ stripped from the input, which has multiple layers of embellishment."
   (make-sequential-monad-binding
    'let*-mon
    :flatmap 'flatmap
+   :monad-progn 'progn-mon
+   :binding `(,var ,expr)
+   :more-bindings more-bindings
+   :body body
+   :more-body more-body))
+
+(defmacro let-mon (((var expr) &rest more-bindings) body &body more-body)
+  (make-parallel-monad-binding
+   'let-mon
+   :flatmap 'flatmap
+   :sequential-let-name 'let*-mon
    :monad-progn 'progn-mon
    :binding `(,var ,expr)
    :more-bindings more-bindings

@@ -44,7 +44,32 @@
               (ctx-run +vector-ctx+
                 (let*-fun ((x #(1 2))
                              (y #(3 4)))
-                    (+ x y))))))
+                    (+ x y)))))
+  (is (equalp #(#(4 5) #(5 6))
+              (ctx-run +vector-ctx+
+                (let-fun ((x #(1 2))
+                          (y #(3 4)))
+                  (+ x y)))))
+
+  ;; Below, the binding uses `X' bound inside of the
+  ;; `LET-FUN' form to compute the expression bound to `Y',
+  ;; not the binding to `X' outside the `LET-FUN' form.
+  (is (equalp #(#(1 1) #(4 4))
+              (ctx-run +vector-ctx+
+                (let ((x 0))
+                  (declare (ignore x))
+                  (let*-fun ((x #(1 2))
+                             (y (vector x x)))
+                    (* x y))))))
+
+  ;; Below, the parallel binding uses `X' bound outside of the
+  ;; `LET-FUN' form to compute the expression bound to `Y'.
+  (is (equalp #(#(0 0) #(0 0))
+              (ctx-run +vector-ctx+
+                (let ((x 0))
+                  (let-fun ((x #(1 2))
+                            (y (vector x x)))
+                    (* x y)))))))
 
 (defstruct id value)
 
@@ -179,6 +204,34 @@
                 (let*-mon ((x '(1 2))
                            (y '(3 4)))
                   (mreturn (+ x y))))))
+
+
+  (is (equalp '(4 5 5 6)
+              (ctx-run +list-verbose-ctx+
+                (let-mon ((x '(1 2))
+                          (y '(3 4)))
+                  (mreturn (+ x y))))))
+
+  ;; Below, the binding uses `X' bound inside of the
+  ;; `LET-FUN' form to compute the expression bound to `Y',
+  ;; not the binding to `X' outside the `LET-FUN' form.
+  (is (equalp '(4 6)
+              (ctx-run +list-verbose-ctx+
+                (let ((x 10))
+                  (declare (ignore x))
+                  (let*-mon ((x '(1 2))
+                             (y  (mreturn (+ x 2))))
+                    (mreturn (+ x y)))))))
+
+  ;; Below, the parallel binding uses `X' bound outside of the
+  ;; `LET-FUN' form to compute the expression bound to `Y'.
+  (is (equalp '(3 4)
+              (ctx-run +list-verbose-ctx+
+                (let ((x 0))
+                  (let-mon ((x '(1 2))
+                            (y  (mreturn (+ x 2))))
+                    (mreturn (+ x y)))))))
+
   (is (equalp '(4 5 5 6)
               (ctx-run +list-verbose-ctx+
                 (let-app ((x '(1 2))
