@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<title>README.html</title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+
+</head>
+
+<body>
+
+<h1 id="contextual">Contextual</h1>
+<h2 id="overview">Overview</h2>
+<p>Contextual is a library enabling the implementation of abstractions like functors and monads in a generic way that decouples resolution of operators from operand types. This method is particularly well suited to dynamically typed languages, and languages that do not employ equational reasoning for method resolution, but it also provides significant increase of flexability.</p>
+<h2 id="abstractions">Abstractions</h2>
+<h3 id="functors">Functors</h3>
+<h4 id="fmap"><sub>FMAP</sub></h4>
+<p><sub>FMAP</sub> is used to apply a function of plain values to an embelished value.</p>
+<p>Example:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>(ctx-run +list+ </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  (fmap #&#39;<span class="dv">1</span>+ &#39;(<span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span>)))</span></code></pre></div>
+<h4 id="let-fun"><sub>LET-FUN</sub></h4>
+<p><sub>LET-FUN</sub> provides parallel functor binding syntax, similar to <sub>LET</sub> except the values are bound</p>
+<p>Example:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>(ctr-run +list+</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a> (let-fun ((x &#39;(<span class="dv">1</span> <span class="dv">2</span>))</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>           (y &#39;(<span class="dv">3</span> <span class="dv">4</span>)))</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>   (<span class="op">+</span> x y)))</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a><span class="co">;; =&gt; &#39;((4 5) (5 6))</span></span></code></pre></div>
+<h4 id="let-fun-1">~LET*-FUN~</h4>
+<p>~LET*-FUN~ provides sequential functor bindind, where the previously bound variable are available in the next expression</p>
+<p>Example:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>(ctx-run +optional+</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>  (let*-fun ((x (<span class="kw">some</span> <span class="dv">3</span>))</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>             (y (<span class="kw">some</span> <span class="dv">4</span>)))</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>    (<span class="op">+</span> x y)))</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a><span class="co">;; =&gt; (some (some 7))(ctx-run +optional+</span></span></code></pre></div>
+<h3 id="applicative-functors">Applicative Functors</h3>
+<h4 id="pure"><sub>PURE</sub></h4>
+<h4 id="fapply"><sub>FAPPLY</sub></h4>
+<h4 id="product"><sub>PRODUCT</sub></h4>
+<h3 id="monads">Monads</h3>
+<h4 id="flatmap"><sub>FLATMAP</sub></h4>
+
+</body>
+</html>
