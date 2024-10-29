@@ -30,9 +30,14 @@
 
 (test product
   (is (equalp (just '(x y)) (ctx-run context (product (pure 'x) (pure 'y)))))
-  (is (equalp (just '(x y)) (ctx-run context (product (none) (pure 'y)))))
+  (is (equalp (none) (ctx-run context (product (none) (pure 'y)))))
   (is (equalp (none) (ctx-run context (product (pure 'x) (none)))))
   (is (equalp (none) (ctx-run context (product (none) (none))))))
 
 (test flatmap
-  (is (equalp (just 3))))
+  (is (equalp (just "x") (ctx-run context (flatmap (lambda (x) (pure (symbol-name x))) (pure 'x)))))
+  (is (equalp (none) (ctx-run context (flatmap (lambda (x) (pure (symbol-name x))) (none))))))
+
+(test flatten
+  (is (equalp (just 'x) (ctx-run context (flatten (pure (pure 'x))))))
+  (is (equalp (none) (ctx-run context (flatten (none))))))

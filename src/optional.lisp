@@ -10,13 +10,13 @@
 (in-package :contextual-optional)
 
 (defunion optional
-  (just x)
+  (just value)
   (none))
 
 (declaim (ftype (function (function optional) optional) optional-flatmap))
 (defun optional-flatmap (f mx)
   (match mx
-    ((just x) (funcall f x))
+    ((just value) (funcall f value))
     ((none)   mx)))
 
 (defun make-optional-context ()
