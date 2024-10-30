@@ -9,12 +9,10 @@ sbcl --script $scriptpath
 exit $?
 |#
 
-
-
 (let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname))))
   (when (probe-file quicklisp-init)
    (load quicklisp-init)))
-
+(ql:quick-load "trivia")
 (require :asdf)
 
 (asdf:load-system :contextual)
