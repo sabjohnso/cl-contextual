@@ -13,6 +13,7 @@ exit $?
   (when (probe-file quicklisp-init)
     (load quicklisp-init)))
 (ql:quickload "trivia")
+(ql:quickload "fiveam")
 (require :asdf)
 
 (asdf:load-system :contextual)
