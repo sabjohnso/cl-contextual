@@ -9,7 +9,7 @@ jobs:
   test:
     name: ${{matrix.lisp}} on ${{matrix.os}}
     runs-on: ${{matrix.os}}
-    stragegy:
+    strategy:
       matrix:
         lisp: [sbcl]
         os: [ubuntu-latest]
@@ -24,11 +24,6 @@ jobs:
       if: ${{matrix.lisp == "sbcl"}}
       shell: bash
       run: sudo apt-get install sbcl
-
-    - name: Install CLISP
-      if: ${{matrix.lisp == 'clisp'}}
-      shell: bash
-      run: sudo apt-get install clisp
 
     - name: Run Tests
       shell: bash
