@@ -32,6 +32,7 @@ jobs:
     - name: Install Quicklisp
       shell: bash
       run: |
+        gpg --import misc/quicklisp-release-key.gpg
         curl -O https://beta.quicklisp.org/quicklisp.lisp
         curl -O https://beta.quicklisp.org/quicklisp.lisp.asc
         gpg --verify quicklisp.lisp.asc quicklisp.lisp
