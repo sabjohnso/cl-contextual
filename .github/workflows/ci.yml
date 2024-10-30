@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        lisp: [sbcl]
+        lisp: [sbcl-bin]
         os: [ubuntu-latest]
       fail-fast: true
     steps:
@@ -21,7 +21,7 @@ jobs:
       run: sudo apt-get update
 
     - name: Install SBCL
-      if: ${{matrix.lisp == "sbcl"}}
+      if: ${{matrix.lisp == 'sbcl-bin'}}
       shell: bash
       run: sudo apt-get install sbcl
 
