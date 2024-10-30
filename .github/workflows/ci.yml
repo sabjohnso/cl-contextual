@@ -1,0 +1,35 @@
+name: CI
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    name: ${{matrix.lisp}} on ${{matrix.os}}
+    runs-on: ${{matrix.os}}
+    stragegy:
+      matrix:
+        lisp: [sbcl]
+        os: [ubuntu-latest]
+      fail-fast: true
+    steps:
+    - uses: actions/checkout@v4
+    - name: Update APT
+      shell: bash
+      run: sudo apt-get update
+
+    - name: Install SBCL
+      if: ${{matrix.lisp == "sbcl"}}
+      shell: bash
+      run: sudo apt-get install sbcl
+
+    - name: Install CLISP
+      if: ${{matrix.lisp == 'clisp'}}
+      shell: bash
+      run: sudo apt-get install clisp
+
+    - name: Run Tests
+      shell: bash
+      run: ./run-tests
