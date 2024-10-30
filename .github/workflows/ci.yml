@@ -20,11 +20,18 @@ jobs:
       shell: bash
       run: sudo apt-get update
 
+    - name: Install GPG
+      shell: bash
+      run : sudo apt-get install gpg
+
     - name: Install SBCL
       if: ${{matrix.lisp == 'sbcl-bin'}}
       shell: bash
       run: sudo apt-get install sbcl
 
-    - name: Run Tests
+    - name: Install Quicklisp
       shell: bash
-      run: ./run-tests
+      run: |
+        curl -O https://beta.quicklisp.org/quicklisp.lisp
+        curl -O https://beta.quicklisp.org/quicklisp.lisp.asc
+        gpg --verify quicklisp.lisp.asc quicklisp.lisp
