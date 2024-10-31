@@ -42,3 +42,13 @@ jobs:
     - name: Run Tests
       shell: bash
       run: ./run-tests
+
+    - name: Run Test Coverage
+      shell: bash
+      run: ./run-coverage
+
+    - name: Upload Test Coverage
+      uses: actions/upload-artifacts@v4
+      with:
+        name: code-coverage-report
+        path: coverage
