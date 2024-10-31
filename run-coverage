@@ -30,5 +30,5 @@ exit $?
       (declaim (optimize sb-cover:store-coverage-data))
       (asdf:oos 'asdf:load-op :contextual :force t)
       (5am:run-all-tests)
-      (sb-cover:report "coverage/"))
+      (sb-cover:report "coverage/report/"))
     (sb-ext:exit :code 1))
