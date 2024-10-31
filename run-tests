@@ -5,16 +5,24 @@ set -euo pipefail
 scriptdir=$(cd $(dirname $0) && pwd)
 scriptpath=$scriptdir/$(basename $0)
 sbcl --script $scriptpath
-
 exit $?
 |#
+
+(require :sb-cover)
+(require :asdf)
+
 
 (let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname))))
   (when (probe-file quicklisp-init)
     (load quicklisp-init)))
+
 (ql:quickload "trivia")
 (ql:quickload "fiveam")
-(require :asdf)
 
 (asdf:load-system :contextual)
-(asdf:test-system :contextual)
+(asdf:load-system :contextual/test)
+
+(defun run ()
+  (if (5am:run-all-tests) 0 1))
+
+(sb-ext:exit :code (run))

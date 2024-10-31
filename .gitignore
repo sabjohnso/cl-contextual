@@ -1,6 +1,9 @@
 *~
 \#*
 
+# Test coverage output
+coverage/
+
 # various fasl extensions
 *.FASL
 *.fasl
