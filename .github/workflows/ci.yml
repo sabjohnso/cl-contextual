@@ -48,7 +48,7 @@ jobs:
       run: ./run-coverage
 
     - name: Upload Test Coverage
-      uses: actions/upload-artifacts@v4
+      uses: actions/upload-artifact@v4
       with:
         name: code-coverage-report
         path: coverage
