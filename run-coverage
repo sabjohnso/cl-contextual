@@ -21,14 +21,18 @@ exit $?
 (ql:quickload "trivia")
 (ql:quickload "fiveam")
 
-(declaim (optimize (sb-cover:store-coverage-data 0)))
 
+(declaim (optimize (sb-cover:store-coverage-data 0)))
 (asdf:oos 'asdf:load-op :contextual :force t)
 (asdf:oos 'asdf:load-op  :contextual/test :force t)
+
+
+
+(declaim (optimize sb-cover:store-coverage-data))
+(asdf:oos 'asdf:load-op :contextual :force t)
+
 (if (5am:run-all-tests)
     (progn
-      (declaim (optimize sb-cover:store-coverage-data))
-      (asdf:oos 'asdf:load-op :contextual :force t)
-      (5am:run-all-tests)
-      (sb-cover:report "coverage/report/"))
+      (sb-cover:report "coverage/report/")
+      (sb-ext:exit :code 0))
     (sb-ext:exit :code 1))

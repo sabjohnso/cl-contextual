@@ -25,74 +25,91 @@
  (defun vector-map (f xs)
    (map 'vector f xs)))
 
-(define-constant +vector-ctx+
-  (make-instance 'functor-operators
-    :fmap #'vector-map))
-
 (test functor-context
-  (is-false (typep +vector-ctx+ 'trivial-operators))
-  (is-false (typep +vector-ctx+ 'monad-operators))
-  (is-false (typep +vector-ctx+ 'applicative-operators))
-  (is-true (typep +vector-ctx+ 'functor-operators))
-  (let ((mx #(1 2 3 4)))
-    (is (equalp (map 'vector #'sqr mx)
-                (ctx-run +vector-ctx+
-                  (fmap #'sqr #(1 2 3 4))))))
-  (is (equalp #(#(4 5) #(5 6))
-              (ctx-run +vector-ctx+
-                (let*-fun ((x #(1 2))
+  (let ((context (make-instance 'functor-operators :fmap #'vector-map)))
+    (is-false (typep context 'trivial-operators))
+    (is-false (typep context 'monad-operators))
+    (is-false (typep context 'applicative-operators))
+    (is-true (typep context 'functor-operators))
+    (let ((mx #(1 2 3 4)))
+      (is (equalp (map 'vector #'sqr mx)
+                  (ctx-run context
+                    (fmap #'sqr #(1 2 3 4))))))
+    (is (equalp #(#(4 5) #(5 6))
+                (ctx-run context
+                  (let*-fun ((x #(1 2))
                              (y #(3 4)))
                     (+ x y)))))
-  (is (equalp #(#(4 5) #(5 6))
-              (ctx-run +vector-ctx+
-                (let-fun ((x #(1 2))
-                          (y #(3 4)))
-                  (+ x y)))))
-
-  ;; Below, the binding uses `X' bound inside of the
-  ;; `LET-FUN' form to compute the expression bound to `Y',
-  ;; not the binding to `X' outside the `LET-FUN' form.
-  (is (equalp #(#(1 1) #(4 4))
-              (ctx-run +vector-ctx+
-                (let ((x 0))
-                  (declare (ignore x))
-                  (let*-fun ((x #(1 2))
-                             (y (vector x x)))
-                    (* x y))))))
-
-  ;; Below, the parallel binding uses `X' bound outside of the
-  ;; `LET-FUN' form to compute the expression bound to `Y'.
-  (is (equalp #(#(0 0) #(0 0))
-              (ctx-run +vector-ctx+
-                (let ((x 0))
+    (is (equalp #(#(4 5) #(5 6))
+                (ctx-run context
                   (let-fun ((x #(1 2))
-                            (y (vector x x)))
-                    (* x y)))))))
+                            (y #(3 4)))
+                    (+ x y)))))
+
+    ;; Below, the binding uses `X' bound inside of the
+    ;; `LET-FUN' form to compute the expression bound to `Y',
+    ;; not the binding to `X' outside the `LET-FUN' form.
+    (is (equalp #(#(1 1) #(4 4))
+                (ctx-run context
+                  (let ((x 0))
+                    (declare (ignore x))
+                    (let*-fun ((x #(1 2))
+                               (y (vector x x)))
+                      (* x y))))))
+
+    ;; Below, the parallel binding uses `X' bound outside of the
+    ;; `LET-FUN' form to compute the expression bound to `Y'.
+    (is (equalp #(#(0 0) #(0 0))
+                (ctx-run context
+                  (let ((x 0))
+                    (let-fun ((x #(1 2))
+                              (y (vector x x)))
+                      (* x y))))))))
 
 (defstruct id value)
 
-(define-constant +id-ctx+
-  (make-instance 'trivial-operators
-    :wrap (lambda (x) (make-id :value x))
-    :unwrap (lambda (mx) (id-value mx))
-    #||#))
 
 (defun sqr-id (x)
   (make-id :value (sqr x)))
 
 (test trivial-context
-  (is-true (typep +id-ctx+ 'trivial-operators))
-  (is-true (typep +id-ctx+ 'monad-operators))
-  (is-true (typep +id-ctx+ 'applicative-operators))
-  (is-true (typep +id-ctx+ 'functor-operators))
-  (is (equalp (make-id :value 3) (ctx-run +id-ctx+ (pure 3))))
-  (is (equalp (make-id :value 3) (ctx-run +id-ctx+ (mreturn 3))))
-  (is (equalp (make-id :value 3) (ctx-run +id-ctx+ (wrap 3))))
-  (is (equalp 3 (ctx-run +id-ctx+ (unwrap (pure 3)))))
-  (is (equalp (make-id :value 9) (ctx-run +id-ctx+ (fmap #'sqr (pure 3)))))
-  (is (equalp (make-id :value 9) (ctx-run +id-ctx+ (fapply (pure #'sqr) (pure 3)))))
-  (is (equalp (make-id :value 9) (ctx-run +id-ctx+ (flatmap #'sqr-id (pure 3)))))
-  (is (equalp (make-id :value 3) (ctx-run +id-ctx+ (flatten (pure (pure 3)))))))
+  (let ((context
+          (make-instance 'trivial-operators
+            :wrap (lambda (x) (make-id :value x))
+            :unwrap (lambda (mx) (id-value mx))
+            #||#)))
+    (is-true (typep context 'trivial-operators))
+    (is-true (typep context 'monad-operators))
+    (is-true (typep context 'applicative-operators))
+    (is-true (typep context 'functor-operators))
+    (is (equalp (make-id :value 3) (ctx-run context (pure 3))))
+    (is (equalp (make-id :value 3) (ctx-run context (mreturn 3))))
+    (is (equalp (make-id :value 3) (ctx-run context (wrap 3))))
+    (is (equalp 3 (ctx-run context (unwrap (pure 3)))))
+    (is (equalp (make-id :value 9) (ctx-run context (fmap #'sqr (pure 3)))))
+    (is (equalp (make-id :value 9) (ctx-run context (fapply (pure #'sqr) (pure 3)))))
+    (is (equalp (make-id :value 9) (ctx-run context (flatmap #'sqr-id (pure 3)))))
+    (is (equalp (make-id :value 3) (ctx-run context (flatten (pure (pure 3))))))))
+
+(test trivial-context
+  (let ((context
+          (make-instance 'trivial-operators
+            :pure (lambda (x) (make-id :value x))
+            :flatten (lambda (mx) (id-value mx)))))
+    (is-true (typep context 'trivial-operators))
+    (is-true (typep context 'monad-operators))
+    (is-true (typep context 'applicative-operators))
+    (is-true (typep context 'functor-operators))
+    (is (equalp (make-id :value 3) (ctx-run context (pure 3))))
+    (is (equalp (make-id :value 3) (ctx-run context (mreturn 3))))
+    (is (equalp (make-id :value 3) (ctx-run context (wrap 3))))
+    (is (equalp 3 (ctx-run context (unwrap (pure 3)))))
+    (is (equalp (make-id :value 9) (ctx-run context (fmap #'sqr (pure 3)))))
+    (is (equalp (make-id :value 9) (ctx-run context (fapply (pure #'sqr) (pure 3)))))
+    (is (equalp (make-id :value 9) (ctx-run context (flatmap #'sqr-id (pure 3)))))
+    (is (equalp (make-id :value 3) (ctx-run context (flatten (pure (pure 3))))))))
+
+
 
 (defun rappend (xs ys)
   (labels ((recur (xs accum)
@@ -100,112 +117,135 @@
                  (recur (cdr xs) (cons (car xs) accum)))))
     (recur xs ys)))
 
-(define-constant +list-flatten-ctx+
-  (make-instance 'monad-operators
-    :fmap (lambda (f xs) (mapcar f xs))
-    :mreturn (lambda (x) (list x))
-    :flatten (lambda (xss)
-               (labels ((recur (xss accum)
-                          (if (null xss) (reverse accum)
-                              (recur (cdr xss) (rappend (car xss) accum)))))
-                 (recur xss nil)))))
-
 (test monad-context-flatten
-  (is-false (typep +list-flatten-ctx+ 'trivial-operators))
-  (is-true (typep +list-flatten-ctx+ 'monad-operators))
-  (is-true (typep +list-flatten-ctx+ 'applicative-operators))
-  (is-true (typep +list-flatten-ctx+ 'functor-operators))
-  (is (equalp '(3) (ctx-run +list-flatten-ctx+ (pure 3))))
-  (is (equalp '(3) (ctx-run +list-flatten-ctx+ (mreturn 3))))
-  (is (equalp '(9) (ctx-run +list-flatten-ctx+ (fmap #'sqr (mreturn 3)))))
-  (is (equalp '(9) (ctx-run +list-flatten-ctx+ (fmap #'sqr (list 3)))))
-  (is (equalp '(9) (ctx-run +list-flatten-ctx+ (fapply (pure #'sqr) (pure 3)))))
-  (is (equalp '(9) (ctx-run +list-flatten-ctx+ (fapply (list #'sqr) (pure 3)))))
-  (is (equalp '(9) (ctx-run +list-flatten-ctx+ (fapply (pure #'sqr) (list 3)))))
-  (is (equalp '(9) (ctx-run +list-flatten-ctx+ (fapply (list #'sqr) (list 3)))))
-  (is (equalp '(3 3) (ctx-run +list-flatten-ctx+ (flatmap (lambda (x) (list x x)) (mreturn 3)))))
-  (is (equalp '(3) (ctx-run +list-flatten-ctx+ (flatmap #'mreturn (mreturn 3)))))
-  (is (equalp '(3) (ctx-run +list-flatten-ctx+ (flatten (mreturn (mreturn 3))))))
-  (is (equalp '(3) (ctx-run +list-flatten-ctx+ (flatten (mreturn (list 3))))))
-  (is (equalp '(3) (ctx-run +list-flatten-ctx+ (flatten (list (mreturn 3))))))
-  (is (equalp '(3) (ctx-run +list-flatten-ctx+ (flatten (list (list 3)))))))
+  (let ((context
+          (make-instance 'monad-operators
+            :fmap (lambda (f xs) (mapcar f xs))
+            :mreturn (lambda (x) (list x))
+            :flatten (lambda (xss)
+                       (labels ((recur (xss accum)
+                                  (if (null xss) (reverse accum)
+                                      (recur (cdr xss) (rappend (car xss) accum)))))
+                         (recur xss nil))))))
+    (is-false (typep context 'trivial-operators))
+    (is-true (typep context 'monad-operators))
+    (is-true (typep context 'applicative-operators))
+    (is-true (typep context 'functor-operators))
+    (is (equalp '(3) (ctx-run context (pure 3))))
+    (is (equalp '(3) (ctx-run context (mreturn 3))))
+    (is (equalp '(9) (ctx-run context (fmap #'sqr (mreturn 3)))))
+    (is (equalp '(9) (ctx-run context (fmap #'sqr (list 3)))))
+    (is (equalp '(9) (ctx-run context (fapply (pure #'sqr) (pure 3)))))
+    (is (equalp '(9) (ctx-run context (fapply (list #'sqr) (pure 3)))))
+    (is (equalp '(9) (ctx-run context (fapply (pure #'sqr) (list 3)))))
+    (is (equalp '(9) (ctx-run context (fapply (list #'sqr) (list 3)))))
+    (is (equalp '(3 3) (ctx-run context (flatmap (lambda (x) (list x x)) (mreturn 3)))))
+    (is (equalp '(3) (ctx-run context (flatmap #'mreturn (mreturn 3)))))
+    (is (equalp '(3) (ctx-run context (flatten (mreturn (mreturn 3))))))
+    (is (equalp '(3) (ctx-run context (flatten (mreturn (list 3))))))
+    (is (equalp '(3) (ctx-run context (flatten (list (mreturn 3))))))
+    (is (equalp '(3) (ctx-run context (flatten (list (list 3))))))))
 
-
-(define-constant +list-flatmap-ctx+
-  (make-instance 'monad-operators
-    :mreturn (lambda (x) (list x))
-    :flatmap (lambda (f xs)
-               (labels ((recur (xs accum)
-                          (if (null xs) (reverse accum)
-                              (recur (cdr xs) (rappend (funcall f (car xs)) accum)))))
-                 (recur xs nil)))))
+(test monad-context-flatten-with-pure
+  (let ((context
+          (make-instance 'monad-operators
+            :fmap (lambda (f xs) (mapcar f xs))
+            :pure (lambda (x) (list x))
+            :flatten (lambda (xss)
+                       (labels ((recur (xss accum)
+                                  (if (null xss) (reverse accum)
+                                      (recur (cdr xss) (rappend (car xss) accum)))))
+                         (recur xss nil))))))
+    (is-false (typep context 'trivial-operators))
+    (is-true (typep context 'monad-operators))
+    (is-true (typep context 'applicative-operators))
+    (is-true (typep context 'functor-operators))
+    (is (equalp '(3) (ctx-run context (pure 3))))
+    (is (equalp '(3) (ctx-run context (mreturn 3))))
+    (is (equalp '(9) (ctx-run context (fmap #'sqr (mreturn 3)))))
+    (is (equalp '(9) (ctx-run context (fmap #'sqr (list 3)))))
+    (is (equalp '(9) (ctx-run context (fapply (pure #'sqr) (pure 3)))))
+    (is (equalp '(9) (ctx-run context (fapply (list #'sqr) (pure 3)))))
+    (is (equalp '(9) (ctx-run context (fapply (pure #'sqr) (list 3)))))
+    (is (equalp '(9) (ctx-run context (fapply (list #'sqr) (list 3)))))
+    (is (equalp '(3 3) (ctx-run context (flatmap (lambda (x) (list x x)) (mreturn 3)))))
+    (is (equalp '(3) (ctx-run context (flatmap #'mreturn (mreturn 3)))))
+    (is (equalp '(3) (ctx-run context (flatten (mreturn (mreturn 3))))))
+    (is (equalp '(3) (ctx-run context (flatten (mreturn (list 3))))))
+    (is (equalp '(3) (ctx-run context (flatten (list (mreturn 3))))))
+    (is (equalp '(3) (ctx-run context (flatten (list (list 3))))))))
 
 (test monad-context-flatmap
-  (is-false (typep +list-flatmap-ctx+ 'trivial-operators))
-  (is-true (typep +list-flatmap-ctx+ 'monad-operators))
-  (is-true (typep +list-flatmap-ctx+ 'applicative-operators))
-  (is-true (typep +list-flatmap-ctx+ 'functor-operators))
-
-  (is (equalp '(3) (ctx-run +list-flatmap-ctx+ (pure 3))))
-  (is (equalp '(3) (ctx-run +list-flatmap-ctx+ (mreturn 3))))
-  (is (equalp '(9) (ctx-run +list-flatmap-ctx+ (fmap #'sqr (mreturn 3)))))
-  (is (equalp '(9) (ctx-run +list-flatmap-ctx+ (fmap #'sqr (list 3)))))
-  (is (equalp '(9) (ctx-run +list-flatmap-ctx+ (fapply (pure #'sqr) (pure 3)))))
-  (is (equalp '(9) (ctx-run +list-flatmap-ctx+ (fapply (list #'sqr) (pure 3)))))
-  (is (equalp '(9) (ctx-run +list-flatmap-ctx+ (fapply (pure #'sqr) (list 3)))))
-  (is (equalp '(9) (ctx-run +list-flatmap-ctx+ (fapply (list #'sqr) (list 3)))))
-  (is (equalp '(3 3) (ctx-run +list-flatmap-ctx+ (flatmap (lambda (x) (list x x)) (mreturn 3)))))
-  (is (equalp '(3) (ctx-run +list-flatmap-ctx+ (flatmap #'mreturn (mreturn 3)))))
-  (is (equalp '(3) (ctx-run +list-flatmap-ctx+ (flatten (mreturn (mreturn 3))))))
-  (is (equalp '(3) (ctx-run +list-flatmap-ctx+ (flatten (mreturn (list 3))))))
-  (is (equalp '(3) (ctx-run +list-flatmap-ctx+ (flatten (list (mreturn 3))))))
-  (is (equalp '(3) (ctx-run +list-flatmap-ctx+ (flatten (list (list 3)))))))
-
-
-(define-constant +list-verbose-ctx+
-  (make-instance 'monad-operators
-    :fmap (lambda (f xs) (mapcar f xs))
-    :mreturn (lambda (x) (list x))
-    :flatmap (lambda (f xs)
-               (labels ((recur (xs accum)
-                          (if (null xs) (reverse accum)
-                              (recur (cdr xs) (rappend (funcall f (car xs)) accum)))))
-                 (recur xs nil)))
-    :flatten (lambda (xss)
-               (labels ((recur (xss accum)
-                          (if (null xss) (reverse accum)
-                              (recur (cdr xss) (rappend (car xss) accum)))))
-                 (recur xss nil)))))
+  (let ((context
+          (make-instance 'monad-operators
+            :mreturn (lambda (x) (list x))
+            :flatmap (lambda (f xs)
+                       (labels ((recur (xs accum)
+                                  (if (null xs) (reverse accum)
+                                      (recur (cdr xs) (rappend (funcall f (car xs)) accum)))))
+                         (recur xs nil))))))
+    (is-false (typep context 'trivial-operators))
+    (is-true (typep context 'monad-operators))
+    (is-true (typep context 'applicative-operators))
+    (is-true (typep context 'functor-operators))
+    (is (equalp '(3) (ctx-run context (pure 3))))
+    (is (equalp '(3) (ctx-run context (mreturn 3))))
+    (is (equalp '(9) (ctx-run context (fmap #'sqr (mreturn 3)))))
+    (is (equalp '(9) (ctx-run context (fmap #'sqr (list 3)))))
+    (is (equalp '(9) (ctx-run context (fapply (pure #'sqr) (pure 3)))))
+    (is (equalp '(9) (ctx-run context (fapply (list #'sqr) (pure 3)))))
+    (is (equalp '(9) (ctx-run context (fapply (pure #'sqr) (list 3)))))
+    (is (equalp '(9) (ctx-run context (fapply (list #'sqr) (list 3)))))
+    (is (equalp '(3 3) (ctx-run context (flatmap (lambda (x) (list x x)) (mreturn 3)))))
+    (is (equalp '(3) (ctx-run context (flatmap #'mreturn (mreturn 3)))))
+    (is (equalp '(3) (ctx-run context (flatten (mreturn (mreturn 3))))))
+    (is (equalp '(3) (ctx-run context (flatten (mreturn (list 3))))))
+    (is (equalp '(3) (ctx-run context (flatten (list (mreturn 3))))))
+    (is (equalp '(3) (ctx-run context (flatten (list (list 3))))))))
 
 (test monad-context-verbose
-  (is-false (typep +list-verbose-ctx+ 'trivial-operators))
-  (is-true (typep +list-verbose-ctx+ 'monad-operators))
-  (is-true (typep +list-verbose-ctx+ 'applicative-operators))
-  (is-true (typep +list-verbose-ctx+ 'functor-operators))
+  (let ((context
+          (make-instance 'monad-operators
+            :fmap (lambda (f xs) (mapcar f xs))
+            :mreturn (lambda (x) (list x))
+            :flatmap (lambda (f xs)
+                       (labels ((recur (xs accum)
+                                  (if (null xs) (reverse accum)
+                                      (recur (cdr xs) (rappend (funcall f (car xs)) accum)))))
+                         (recur xs nil)))
+            :flatten (lambda (xss)
+                       (labels ((recur (xss accum)
+                                  (if (null xss) (reverse accum)
+                                      (recur (cdr xss) (rappend (car xss) accum)))))
+                         (recur xss nil))))))
+  (is-false (typep context 'trivial-operators))
+  (is-true (typep context 'monad-operators))
+  (is-true (typep context 'applicative-operators))
+  (is-true (typep context 'functor-operators))
 
-  (is (equalp '(3) (ctx-run +list-verbose-ctx+ (pure 3))))
-  (is (equalp '(3) (ctx-run +list-verbose-ctx+ (mreturn 3))))
-  (is (equalp '(9) (ctx-run +list-verbose-ctx+ (fmap #'sqr (mreturn 3)))))
-  (is (equalp '(9) (ctx-run +list-verbose-ctx+ (fmap #'sqr (list 3)))))
-  (is (equalp '(9) (ctx-run +list-verbose-ctx+ (fapply (pure #'sqr) (pure 3)))))
-  (is (equalp '(9) (ctx-run +list-verbose-ctx+ (fapply (list #'sqr) (pure 3)))))
-  (is (equalp '(9) (ctx-run +list-verbose-ctx+ (fapply (pure #'sqr) (list 3)))))
-  (is (equalp '(9) (ctx-run +list-verbose-ctx+ (fapply (list #'sqr) (list 3)))))
-  (is (equalp '(3 3) (ctx-run +list-verbose-ctx+ (flatmap (lambda (x) (list x x)) (mreturn 3)))))
-  (is (equalp '(3) (ctx-run +list-verbose-ctx+ (flatmap #'mreturn (mreturn 3)))))
-  (is (equalp '(3) (ctx-run +list-verbose-ctx+ (flatten (mreturn (mreturn 3))))))
-  (is (equalp '(3) (ctx-run +list-verbose-ctx+ (flatten (mreturn (list 3))))))
-  (is (equalp '(3) (ctx-run +list-verbose-ctx+ (flatten (list (mreturn 3))))))
-  (is (equalp '(3) (ctx-run +list-verbose-ctx+ (flatten (list (list 3))))))
+  (is (equalp '(3) (ctx-run context (pure 3))))
+  (is (equalp '(3) (ctx-run context (mreturn 3))))
+  (is (equalp '(9) (ctx-run context (fmap #'sqr (mreturn 3)))))
+  (is (equalp '(9) (ctx-run context (fmap #'sqr (list 3)))))
+  (is (equalp '(9) (ctx-run context (fapply (pure #'sqr) (pure 3)))))
+  (is (equalp '(9) (ctx-run context (fapply (list #'sqr) (pure 3)))))
+  (is (equalp '(9) (ctx-run context (fapply (pure #'sqr) (list 3)))))
+  (is (equalp '(9) (ctx-run context (fapply (list #'sqr) (list 3)))))
+  (is (equalp '(3 3) (ctx-run context (flatmap (lambda (x) (list x x)) (mreturn 3)))))
+  (is (equalp '(3) (ctx-run context (flatmap #'mreturn (mreturn 3)))))
+  (is (equalp '(3) (ctx-run context (flatten (mreturn (mreturn 3))))))
+  (is (equalp '(3) (ctx-run context (flatten (mreturn (list 3))))))
+  (is (equalp '(3) (ctx-run context (flatten (list (mreturn 3))))))
+  (is (equalp '(3) (ctx-run context (flatten (list (list 3))))))
   (is (equalp '(4 5 5 6)
-              (ctx-run +list-verbose-ctx+
+              (ctx-run context
                 (let*-mon ((x '(1 2))
                            (y '(3 4)))
                   (mreturn (+ x y))))))
 
 
   (is (equalp '(4 5 5 6)
-              (ctx-run +list-verbose-ctx+
+              (ctx-run context
                 (let-mon ((x '(1 2))
                           (y '(3 4)))
                   (mreturn (+ x y))))))
@@ -214,7 +254,7 @@
   ;; `LET-FUN' form to compute the expression bound to `Y',
   ;; not the binding to `X' outside the `LET-FUN' form.
   (is (equalp '(4 6)
-              (ctx-run +list-verbose-ctx+
+              (ctx-run context
                 (let ((x 10))
                   (declare (ignore x))
                   (let*-mon ((x '(1 2))
@@ -224,22 +264,22 @@
   ;; Below, the parallel binding uses `X' bound outside of the
   ;; `LET-FUN' form to compute the expression bound to `Y'.
   (is (equalp '(3 4)
-              (ctx-run +list-verbose-ctx+
+              (ctx-run context
                 (let ((x 0))
                   (let-mon ((x '(1 2))
                             (y  (mreturn (+ x 2))))
                     (mreturn (+ x y)))))))
 
   (is (equalp '(4 5 5 6)
-              (ctx-run +list-verbose-ctx+
+              (ctx-run context
                 (let-app ((x '(1 2))
                           (y '(3 4)))
                   (+ x y)))))
   (is (equalp '((4 5) (5 6))
-              (ctx-run +list-verbose-ctx+
+              (ctx-run context
                 (let*-fun ((x '(1 2))
                            (y '(3 4)))
-                  (+ x y))))))
+                  (+ x y)))))))
 
 
 
@@ -282,63 +322,122 @@
                     (t (recur (cdr fs) (cdr xs) (cons (funcall (car fs) (car xs)) accum))))))
      (recur fs xs nil))))
 
-(define-constant +ziplist-fapply-ctx+
-    (make-instance 'applicative-operators
-      :fapply #'ziplist-fapply
-      :pure #'repeat))
 
 (test applicative-context-fapply
-  (is-false (typep +ziplist-fapply-ctx+ 'trivial-operators))
-  (is-false (typep +ziplist-fapply-ctx+ 'monad-operators))
-  (is-true (typep +ziplist-fapply-ctx+ 'applicative-operators))
-  (is-true (typep +ziplist-fapply-ctx+ 'functor-operators))
-  (is (equalp (repeat 3) (ctx-run +ziplist-fapply-ctx+ (pure 3))))
-  (is (equalp (repeat 9) (ctx-run +ziplist-fapply-ctx+ (fmap #'sqr (repeat 3)))))
-  (is (equalp '(1 4 9) (ctx-run +ziplist-fapply-ctx+ (fmap #'sqr '(1 2 3)))))
-  (is (equalp '(1 4 9) (ctx-run +ziplist-fapply-ctx+ (fapply (pure #'sqr) '(1 2 3)))))
-  (is (equalp (repeat 9) (ctx-run +ziplist-fapply-ctx+ (fapply (pure #'sqr) (repeat 3)))))
-  (is (equalp '(9 6) (ctx-run +ziplist-fapply-ctx+ (fapply (list #'sqr #'twc) (repeat 3)))))
-  (is (equalp '(1 4) (ctx-run +ziplist-fapply-ctx+ (fapply (list #'sqr #'twc) '(1 2)))))
-  (is (equalp (repeat '(x y)) (ctx-run +ziplist-fapply-ctx+ (product (pure 'x) (pure 'y)))))
+  (let ((context
+          (make-instance 'applicative-operators
+            :fapply #'ziplist-fapply
+            :pure #'repeat)))
+    (is-false (typep context 'trivial-operators))
+    (is-false (typep context 'monad-operators))
+    (is-true (typep context 'applicative-operators))
+    (is-true (typep context 'functor-operators))
+    (is (equalp (repeat 3) (ctx-run context (pure 3))))
+    (is (equalp (repeat 9) (ctx-run context (fmap #'sqr (repeat 3)))))
+    (is (equalp '(1 4 9) (ctx-run context (fmap #'sqr '(1 2 3)))))
+    (is (equalp '(1 4 9) (ctx-run context (fapply (pure #'sqr) '(1 2 3)))))
+    (is (equalp (repeat 9) (ctx-run context (fapply (pure #'sqr) (repeat 3)))))
+    (is (equalp '(9 6) (ctx-run context (fapply (list #'sqr #'twc) (repeat 3)))))
+    (is (equalp '(1 4) (ctx-run context (fapply (list #'sqr #'twc) '(1 2)))))
+    (is (equalp (repeat '(x y)) (ctx-run context (product (pure 'x) (pure 'y)))))
     (is (equalp '(4 6)
-       (ctx-run +ziplist-fapply-ctx+
-         (let-app ((x '(1 2))
-                   (y '(3 4)))
-           (+ x y)))))
-  (is (equalp '((4 5) (5 6))
-              (ctx-run +ziplist-fapply-ctx+
-                (let*-fun ((x '(1 2))
-                           (y '(3 4)))
-                  (+ x y))))))
+                (ctx-run context
+                  (let-app ((x '(1 2))
+                            (y '(3 4)))
+                    (+ x y)))))
+    (is (equalp '((4 5) (5 6))
+                (ctx-run context
+                  (let*-fun ((x '(1 2))
+                             (y '(3 4)))
+                    (+ x y)))))))
 
-
-
-(define-constant +ziplist-product-ctx+
-  (make-instance 'applicative-operators
-    :fmap #'ziplist-fmap
-    :pure #'repeat
-    :product #'ziplist-product))
 
 (test applicative-context-product
-  (is-false (typep +ziplist-product-ctx+ 'trivial-operators))
-  (is-false (typep +ziplist-product-ctx+ 'monad-operators))
-  (is-true (typep +ziplist-product-ctx+ 'applicative-operators))
-  (is-true (typep +ziplist-product-ctx+ 'functor-operators))
-  (is (equalp (repeat 3) (ctx-run +ziplist-product-ctx+ (pure 3))))
-  (is (equalp (repeat 9) (ctx-run +ziplist-product-ctx+ (fmap #'sqr (repeat 3)))))
-  (is (equalp '(1 4 9) (ctx-run +ziplist-product-ctx+ (fmap #'sqr '(1 2 3)))))
-  (is (equalp '(1 4 9) (ctx-run +ziplist-product-ctx+ (fapply (pure #'sqr) '(1 2 3)))))
-  (is (equalp (repeat 9) (ctx-run +ziplist-product-ctx+ (fapply (pure #'sqr) (repeat 3)))))
-  (is (equalp '(9 6) (ctx-run +ziplist-product-ctx+ (fapply (list #'sqr #'twc) (repeat 3)))))
-  (is (equalp '(1 4) (ctx-run +ziplist-product-ctx+ (fapply (list #'sqr #'twc) '(1 2)))))
-  (is (equalp (repeat '(x y)) (ctx-run +ziplist-product-ctx+ (product (pure 'x) (pure 'y)))))
-  (is (equalp '(4 6)
-       (ctx-run +ziplist-product-ctx+
-         (let-app ((x '(1 2))
-                   (y '(3 4)))
-           (+ x y)))))
-  (is (equalp '((4 5) (5 6))
-              (ctx-run +ziplist-product-ctx+
-                (let*-fun ((x '(1 2))
+ (let ((context (make-instance 'applicative-operators
+                  :fmap #'ziplist-fmap
+                  :pure #'repeat
+                  :product #'ziplist-product)))
+   (is-false (typep context 'trivial-operators))
+   (is-false (typep context 'monad-operators))
+   (is-true (typep context 'applicative-operators))
+   (is-true (typep context 'functor-operators))
+   (is (equalp (repeat 3) (ctx-run context (pure 3))))
+   (is (equalp (repeat 9) (ctx-run context (fmap #'sqr (repeat 3)))))
+   (is (equalp '(1 4 9) (ctx-run context (fmap #'sqr '(1 2 3)))))
+   (is (equalp '(1 4 9) (ctx-run context (fapply (pure #'sqr) '(1 2 3)))))
+   (is (equalp (repeat 9) (ctx-run context (fapply (pure #'sqr) (repeat 3)))))
+   (is (equalp '(9 6) (ctx-run context (fapply (list #'sqr #'twc) (repeat 3)))))
+   (is (equalp '(1 4) (ctx-run context (fapply (list #'sqr #'twc) '(1 2)))))
+   (is (equalp (repeat '(x y)) (ctx-run context (product (pure 'x) (pure 'y)))))
+   (is (equalp '(4 6)
+               (ctx-run context
+                 (let-app ((x '(1 2))
                            (y '(3 4)))
-                  (+ x y))))))
+                   (+ x y)))))
+   (is (equalp '((4 5) (5 6))
+               (ctx-run context
+                 (let*-fun ((x '(1 2))
+                            (y '(3 4)))
+                   (+ x y)))))))
+
+(test lift
+  (let ((context (make-instance 'trivial-operators
+                   :wrap (lambda (x) (make-id :value x))
+                   :unwrap #'id-value)))
+    (is (equalp
+         (make-id :value 4)
+         (ctx-run context (lift #'sqr (pure 2)))))
+    (is (equalp
+         (make-id :value 3)
+         (ctx-run context (lift2 #'+ (pure 1) (pure 2)))))
+    (is (equalp
+         (make-id :value 6)
+         (ctx-run context (lift3 #'+ (pure 1) (pure 2) (pure 3)))))
+    (is (equalp
+         (make-id :value 10)
+         (ctx-run context (lift4 #'+ (pure 1) (pure 2) (pure 3) (pure 4)))))
+    (is (equalp
+         (make-id :value 15)
+         (ctx-run context (lift5 #'+ (pure 1) (pure 2) (pure 3) (pure 4) (pure 5)))))
+    (is (equalp
+         (make-id :value 21)
+         (ctx-run context (lift6 #'+ (pure 1) (pure 2) (pure 3) (pure 4) (pure 5) (pure 6)))))
+    (is (equalp
+         (make-id :value 28)
+         (ctx-run context (lift7 #'+ (pure 1) (pure 2) (pure 3) (pure 4) (pure 5) (pure 6) (pure 7)))))))
+
+(defmacro is-error (expr)
+  `(is-true
+    (handler-case
+        (progn ,expr nil)
+      (error (e) t))))
+
+(test missing-operators
+  (is-error (make-instance 'trivial-operators :wrap #'(lambda (x) (make-id :value x))))
+  (is-error (make-instance 'trivial-operators :unwrap #'id-value))
+  (is-error (make-instance 'monad-operators
+              :fmap (lambda (f xs) (mapcar f xs))
+              :flatten (lambda (xss)
+                         (labels ((recur (xss accum)
+                                    (if (null xss) (reverse accum)
+                                        (recur (cdr xss) (rappend (car xss) accum)))))
+                           (recur xss nil)))))
+  (is-error (make-instance 'monad-operators
+              :mreturn (lambda (x) (list x))
+              :flatten (lambda (xss)
+                         (labels ((recur (xss accum)
+                                    (if (null xss) (reverse accum)
+                                        (recur (cdr xss) (rappend (car xss) accum)))))
+                           (recur xss nil)))))
+  (is-error (make-instance 'monad-operators
+              :fmap (lambda (f xs) (mapcar f xs))
+              :mreturn (lambda (x) (list x))))
+
+  (is-error (make-instance 'applicative-operators
+              :fapply #'ziplist-fapply))
+
+  (is-error (make-instance 'applicative-operators
+              :pure #'repeat
+              :product #'ziplist-product))
+
+  (is-error (make-instance 'functor-operators)))

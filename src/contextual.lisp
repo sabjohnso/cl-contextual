@@ -239,7 +239,7 @@ over the input values in an applicative context."
             (e me))
     (funcall f a b c d e)))
 
-(defun lift6 (f ma mb mc md me mf)
+(defun lift6 (f ma mb mc md me mg)
   "Return the result of mapping the 6-ary function of plain vaues (`F')
 over the input values in an applicative context."
   (let-app ((a ma)
@@ -247,10 +247,10 @@ over the input values in an applicative context."
             (c mc)
             (d md)
             (e me)
-            (f mf))
-    (funcall f a b c d e f)))
+            (g mg))
+    (funcall f a b c d e g)))
 
-(defun lift7 (f ma mb mc md me mf mg)
+(defun lift7 (f ma mb mc md me mg mh)
   "Return the result of mapping the 7-ary function of plain vaues (`F')
 over the input values in an applicative context."
   (let-app ((a ma)
@@ -258,9 +258,9 @@ over the input values in an applicative context."
             (c mc)
             (d md)
             (e me)
-            (f mf)
-            (g mg))
-    (funcall f a b c d e f f)))
+            (g mg)
+            (h mh))
+    (funcall f a b c d e g h)))
 
 (defun get-argument-or-slot-value (args keyword obj slot-name)
   "Return a value from the arguments or a bound slot with preference to the
@@ -287,6 +287,11 @@ not occur in the arguments, return `NIL'."
    (product :initarg :product :type optional-function :reader product-func)))
 
 (defmethod initialize-instance ((obj applicative-operators) &rest args &key &allow-other-keys)
+    (let ((pure (get-argument-or-slot-value args :pure obj 'pure)))
+    (if pure
+        (setf (slot-value obj 'pure) pure)
+        (error "`PURE' was not provide and cannot be derived for `APPLICATIVE-OPERATORS'")))
+
   (let ((fapply (get-argument-or-slot-value args :fapply obj 'fapply)))
     (if fapply (setf (slot-value obj 'fapply) fapply)
         (let ((product (get-argument-or-slot-value args :product obj 'product))
@@ -300,15 +305,9 @@ not occur in the arguments, return `NIL'."
     (if product (setf (slot-value obj 'product) product)
         (let ((fapply (get-argument-or-slot-value args :fapply obj 'fapply))
               (pure (get-argument-or-slot-value args :pure obj 'pure)))
-          (if (and fapply pure)
-              (setf (slot-value obj 'product)
-                    (lambda/fapply-to-product :fapply fapply :pure pure))
-              (error "`PURE' was not provide and cannot be derived for `APPLICATIVE-OPERATORS'")))))
-
-  (let ((pure (get-argument-or-slot-value args :pure obj 'pure)))
-    (if pure
-        (setf (slot-value obj 'pure) pure)
-        (error "`PURE' was not provide and cannot be derived for `APPLICATIVE-OPERATORS'")))
+          (assert fapply) ;; fapply should be guaranteed at this point
+          (assert pure)   ;; pure should be guaranteed at this point
+          (setf (slot-value obj 'product) (lambda/fapply-to-product :fapply fapply :pure pure)))))
 
   ;; Derive the function for `FMAP'.
   (setf (slot-value obj 'fmap)
@@ -338,9 +337,8 @@ not occur in the arguments, return `NIL'."
     (if flatten
         (setf (slot-value obj 'flatten) flatten)
         (let ((flatmap (get-argument-or-slot-value args :flatmap obj 'flatmap)))
-          (if flatmap
-              (setf (slot-value obj 'flatten) (lambda/flatmap-to-flatten :flatmap flatmap))
-              (error "`FLATTEN' was not provided and cannot be derived for `MONAD-OPERATORS'")))))
+          (assert flatmap) ;; flatmap should be guaranteed at this point
+          (setf (slot-value obj 'flatten) (lambda/flatmap-to-flatten :flatmap flatmap)))))
 
   (let ((mreturn (get-argument-or-slot-value args :mreturn obj 'mreturn)))
     (if mreturn
