@@ -89,7 +89,7 @@
     (is (equalp (make-id :value 9) (ctx-run context (flatmap #'sqr-id (pure 3)))))
     (is (equalp (make-id :value 3) (ctx-run context (flatten (pure (pure 3))))))))
 
-(test trivial-context
+(test trivial-context-pure-and-flatten
   (let ((context
           (make-instance 'trivial-operators
             :pure (lambda (x) (make-id :value x))
@@ -105,9 +105,65 @@
     (is (equalp (make-id :value 9) (ctx-run context (fmap #'sqr (pure 3)))))
     (is (equalp (make-id :value 9) (ctx-run context (fapply (pure #'sqr) (pure 3)))))
     (is (equalp (make-id :value 9) (ctx-run context (flatmap #'sqr-id (pure 3)))))
-    (is (equalp (make-id :value 3) (ctx-run context (flatten (pure (pure 3))))))))
+    (is (equalp (make-id :value 3) (ctx-run context (flatten (pure (pure 3))))))
+    (is (equalp 3 (ctx-run context (extract (pure 3)))))
+    (is (equalp (make-id :value 3) (ctx-run context (extend #'extract (pure 3)))))
+    (is (equalp (make-id :value 3) (ctx-run context (extend #'extract (make-id :value 3)))))
+    (is (equalp (make-id :value (make-id :value 3))
+                (ctx-run context
+                  (duplicate (pure 3)))))
+    (is (equalp 3 (expel context (pure 3))))))
 
+(test trivial-context-pure-and-extract
+  (let ((context
+          (make-instance 'trivial-operators
+            :pure (lambda (x) (make-id :value x))
+            :extract (lambda (mx) (id-value mx)))))
+    (is-true (typep context 'trivial-operators))
+    (is-true (typep context 'monad-operators))
+    (is-true (typep context 'applicative-operators))
+    (is-true (typep context 'functor-operators))
+    (is (equalp (make-id :value 3) (ctx-run context (pure 3))))
+    (is (equalp (make-id :value 3) (ctx-run context (mreturn 3))))
+    (is (equalp (make-id :value 3) (ctx-run context (wrap 3))))
+    (is (equalp 3 (ctx-run context (unwrap (pure 3)))))
+    (is (equalp (make-id :value 9) (ctx-run context (fmap #'sqr (pure 3)))))
+    (is (equalp (make-id :value 9) (ctx-run context (fapply (pure #'sqr) (pure 3)))))
+    (is (equalp (make-id :value 9) (ctx-run context (flatmap #'sqr-id (pure 3)))))
+    (is (equalp (make-id :value 3) (ctx-run context (flatten (pure (pure 3))))))
+    (is (equalp 3 (ctx-run context (extract (pure 3)))))
+    (is (equalp (make-id :value 3) (ctx-run context (extend #'extract (pure 3)))))
+    (is (equalp (make-id :value 3) (ctx-run context (extend #'extract (make-id :value 3)))))
+    (is (equalp (make-id :value (make-id :value 3))
+                (ctx-run context
+                  (duplicate (pure 3)))))))
 
+(test comonad-context-with-duplicate
+  (let ((context
+          (make-instance 'comonad-operators
+            :fmap (lambda (f wx) (cons (funcall f (car wx))
+                                       (cdr wx)))
+            :extract #'car
+            :duplicate (lambda (wx)
+                         (cons wx (cdr wx))))))
+    (is (equal (ctx-run context
+                 (extend (lambda (wx) (sqr (car wx))) `(3 . 4)))
+               `(9 . 4)))
+    (is (equal 3 (ctx-run context
+                   (extract '(3 . 4)))))
+    (is (equal '((3 . 4) . 4)
+               (ctx-run context
+                 (duplicate `(3 . 4)))))))
+
+(test comonad-context-with-extend
+  (let ((context
+          (make-instance 'comonad-operators
+            :extract #'car
+            :extend (lambda (f wx)
+                      (cons (funcall f wx) (cdr wx))))))
+    (is (equal (ctx-run context (extend (lambda (wx) (sqr (car wx))) `(3 . 4))) `(9 . 4)))
+    (is (equal 3 (ctx-run context (extract '(3 . 4)))))
+    (is (equal '((3 . 4) . 4) (ctx-run context (duplicate `(3 . 4)))))))
 
 (defun rappend (xs ys)
   (labels ((recur (xs accum)
@@ -441,4 +497,10 @@
               :pure #'repeat
               :product #'ziplist-product))
 
-  (is-error (make-instance 'functor-operators)))
+  (is-error (make-instance 'functor-operators))
+
+  (is-error (make-instance 'comonad-operators))
+  (is-error (make-instance 'comonad-operators :extract #'funcall))
+
+  (is-error (make-instance 'comonad-operators :extract #'funcall :duplicate #'list))
+  (is-error (make-instance 'comonad-operators :extend (lambda (f wx) (funcall f wx)))))

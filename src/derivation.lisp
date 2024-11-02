@@ -10,8 +10,9 @@
    #:defun/flatmap-to-fapply       #:lambda/flatmap-to-fapply
    #:defun/fapply-to-product       #:lambda/fapply-to-product
    #:defun/product-to-fapply       #:lambda/product-to-fapply
-   #:defun/fapply-to-fmap          #:lambda/fapply-to-fmap))
-
+   #:defun/fapply-to-fmap          #:lambda/fapply-to-fmap
+   #:defun/duplicate-to-extend     #:lambda/duplicate-to-extend
+   #:defun/extend-to-duplicate     #:lambda/extend-to-duplicate))
 (in-package :contextual-derivation)
 
 (defmacro with-syms ((&rest names) &body body)
@@ -143,3 +144,117 @@ from the named functions `FAPPLY' and `PURE'."
  from `FAPPLY' and `PURE'."
   (lambda (f mx)
     (funcall fapply (funcall pure f) mx)))
+
+
+
+
+(defmacro defun/duplicate-to-extend (name &key duplicate fmap documentation)
+  "Defines a function `NAME' that prefoms a comonadic mapping operation.
+
+The resulting function will take two arguments: `F', the function to map,
+and `WX', the comonadic input, which will be duplicated before mapping.
+The defined function uses the provided comonadic duplicate and fmap functions
+name by the inputs `DUPLICATE` and `FMAP`.
+
+Parameters:
+  NAME           - The name of the function to define.
+  :DUPLICATE     - The name of the comonadic duplciate function for the context.
+  :FMAP          - The name of the functorial mapping function for the context.
+  :DOCUMENTATION - Optional Documentation for the defined function.
+"
+  (assert duplicate)
+  (assert fmap)
+
+  (let ((documentation (if documentation (list documentation) documentation)))
+    (with-syms (f wx)
+      `(defun ,name (,f ,wx)
+         ,@documentation
+         (,fmap ,f (,duplicate ,wx))))))
+
+(defun lambda/duplicate-to-extend (&key duplicate fmap)
+  "Creates a lambda function that performs a comonadic 'extend' operation.
+
+This function constructs and returns an anonymous function (lambda) that
+takes a function `F' and a comonadic context `WX', and then performs an
+extend-like operation by:
+  1. Duplicating the context `WX' using the provided `DUPLICATE' function.
+  2. Mapping `F' over the duplicated context using the provided `FMAP' function.
+
+Parameters:
+  :DUPLICATE - A function that duplicates the comonadic context `WX'.
+  :FMAP      - A function that maps `F' over elements in the duplicated
+               context.
+
+Usage:
+  This returned lambda function can be applied to a function `F' and a
+  comonadic context `WX' to perform comonadic mapping.
+
+Example:
+  (let ((extend-fn (lambda/duplicate-to-extend :duplicate duplicate-fn :fmap fmap-fn)))
+    (funcall extend-fn some-function some-context))"
+  (flet ((duplicate (wx) (funcall duplicate wx))
+         (fmap (f wx) (funcall fmap f wx)))
+    (lambda (f wx)
+      (fmap f (duplicate wx)))))
+
+
+(defmacro defun/extend-to-duplicate (name &key extend documentation)
+  "Defines a function `NAME` that duplicates a comonadic context using an 'extend' function.
+
+This macro generates a function that takes a single argument `WX` and applies
+the `EXTEND` function to it with an identity transformation, effectively duplicating
+the comonadic context. This is useful in comonadic programming where duplicating
+or 'extending' the context is required to perform further operations.
+
+Parameters:
+  NAME           - The name of the function to define. Must be a symbol.
+  :EXTEND        - A function that takes a transformation function and the comonadic
+                   context `WX`, and applies the transformation across the context.
+                   Must be a symbol.
+  :DOCUMENTATION - An optional string describing the purpose or behavior of the
+                   generated function, added as a docstring.
+
+Example Usage:
+  (defun/extend-to-duplicate my-duplicate :extend extend-fn :documentation \"Duplicates the context using extend-fn\")
+
+This will create a function `my-duplicate` that takes a comonadic context `WX`
+and returns a duplicated context by applying `extend-fn` with an identity transformation."
+
+  (assert (symbolp name))
+  (assert (symbolp extend))
+  (assert (or (null documentation)
+              (stringp documentation)))
+
+  (let ((documentation (if documentation (list documentation) nil)))
+    (with-syms (wx)
+      `(defun ,name (,wx)
+         ,@documentation
+         (,extend (lambda (,wx) ,wx) ,wx)))))
+
+
+
+(defun lambda/extend-to-duplicate (&key extend)
+  "Creates a lambda function that perfoms a comonadic 'duplicate' operation using an 'extend' function.
+
+This function constructs and returns an anonymous function (lambda) that,
+when given a comonadic context `WX', applies an extend-like operation to
+produce a duplicated context. It effectively uses the `EXTEND' function to
+create a new context containing the original context at each level.
+
+Parameters:
+  :EXTEND - A function that performs comonadic mapping to the comonadic context `WX'.
+
+Usage:
+  The returned lambda function can be used to duplicate a comonadic
+  structure by.
+
+Example:
+  (let ((duplicate-fn (lambda/extend-to-duplicate :extend extend-fn)))
+    (funcall duplicate-fn some-context))
+
+This will return a duplicated context by applying the `EXTEND' function
+to `some-context' with an identity function."
+  (assert (functionp extend))
+  (flet ((extend (f wx)
+           (funcall extend f wx)))
+    (lambda (wx) (extend (lambda (wx) wx) wx))))

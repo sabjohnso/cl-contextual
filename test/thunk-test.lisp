@@ -38,10 +38,19 @@
   (let ((context (make-thunk-context)))
     (is (equal "X" (funcall (ctx-run context (flatmap (lambda (x) (thunk (symbol-name x))) (pure 'x))))))))
 
-(test flatten/unwrap
+(test flatten/unwrap/extract
   (let ((context (make-thunk-context)))
     (is (eq 'x (funcall (ctx-run context (flatten (thunk (thunk 'x)))))))
-    (is (eq 'x (funcall (ctx-run context (unwrap (thunk (thunk 'x)))))))))
+    (is (eq 'x (funcall (ctx-run context (unwrap (thunk (thunk 'x)))))))
+    (is (eq 'x (ctx-run context (extract (thunk 'x)))))))
+
+(test extend
+  (let ((context (make-thunk-context)))
+    (is (eq 'x (funcall (ctx-run context (extend  #'extract (thunk 'x))))))))
+
+(test duplicate
+  (let ((context (make-thunk-context)))
+    (is (eq 'x (funcall (funcall (ctx-run context (duplicate (pure 'x)))))))))
 
 (test binding-syntax
   (let ((context (make-thunk-context)))

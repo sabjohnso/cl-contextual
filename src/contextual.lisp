@@ -7,17 +7,21 @@
    #:pure #:fapply #:product
    #:mreturn #:flatmap #:flatten
    #:wrap #:unwrap
+   #:extract #:duplicate #:extend
+   #:expel
 
    #:fmap-func
    #:pure-func #:fapply-func #:product-func
    #:flatmap-func #:flatten-func
    #:wrap-func #:unwrap-func
+   #:extract-func #:duplicate-func #:extend-func
    #:let*-fun #:let-fun #:let-app #:let*-mon #:let-mon
    #:lift #:lift2 #:lift3 #:lift4 #:lift5 #:lift6 #:lift7
 
    #:functor-operators
    #:applicative-operators
    #:monad-operators
+   #:comonad-operators
    #:trivial-operators
 
    #:ctx-run))
@@ -33,6 +37,9 @@
 (defgeneric flatten-func (context))
 (defgeneric wrap-func    (context))
 (defgeneric unwrap-func  (context))
+(defgeneric extract-func (context))
+(defgeneric duplicate-func (context))
+(defgeneric extend-func (context))
 
 (defun ask-fmap ()
   (ctx-asks #'fmap-func))
@@ -60,6 +67,15 @@
 
 (defun ask-unwrap ()
   (ctx-asks #'unwrap-func))
+
+(defun ask-extract ()
+  (ctx-asks #'extract-func))
+
+(defun ask-duplicate ()
+  (ctx-asks #'duplicate-func))
+
+(defun ask-extend ()
+  (ctx-asks #'extend-func))
 
 (defun fmap (f cmx)
   "Given a function and an embelished value, return a
@@ -143,6 +159,33 @@ stripped from the input, which has multiple layers of embellishment."
                 (mx (ctx-injest cmx)))
     (funcall unwrap mx)))
 
+(defun extract (cwx)
+  "Return a contextual expression extracting the value from the embellishment."
+  (let-app/ctx ((extract (ask-extract))
+                (wx (ctx-injest cwx)))
+    (funcall extract wx)))
+
+(defun expel (ctx cwx)
+  (ctx-run ctx (extract cwx)))
+
+(defun duplicate (cwx)
+  "Return a contextual expression with the context's embellishment duplicated on the input"
+  (let-app/ctx ((duplicate (ask-duplicate))
+                (wx (ctx-injest cwx)))
+    (funcall duplicate wx)))
+
+(defun extend (f cwx)
+  "Return a contextual expression with the context's embellishment extended back over
+the value extracted from the embellishment."
+  (let-app/ctx ((ctx (ctx-ask))
+                (extend (ask-extend))
+                (wx (ctx-injest cwx)))
+    (funcall extend (lambda (wx)
+                      (let ((result (funcall f wx)))
+                        (if (contextual-p result)
+                            (ctx-run ctx result)
+                            result)))
+             wx)))
 
 (defmacro let*-fun (((var expr) &rest more-bindings) body &body more-body)
   (make-sequential-functor-binding
@@ -368,7 +411,46 @@ not occur in the arguments, return `NIL'."
 
   (call-next-method))
 
-(defclass trivial-operators (monad-operators)
+(defclass comonad-operators (functor-operators)
+  ((extract :initarg :extract :type function :reader extract-func)
+   (duplicate :initarg :duplicate :type function :reader duplicate-func)
+   (extend :initarg :extend :type function :reader extend-func)))
+
+(defmethod initialize-instance ((obj comonad-operators) &rest args)
+  (let ((extract (get-argument-or-slot-value args :extract obj 'extract)))
+    (if extract
+        (setf (slot-value obj 'extract) extract)
+        (error "`EXTRACT' was not provided and could not be derived fro `TRIVIAL-OPERATORS'")))
+
+  (let ((extend (get-argument-or-slot-value args :extend obj 'extend)))
+    (if extend
+        (setf (slot-value obj 'extend) extend)
+        (let ((fmap (get-argument-or-slot-value args :fmap obj 'fmap))
+              (duplicate (get-argument-or-slot-value args :duplicate obj 'duplicate)))
+          (if (and fmap duplicate)
+              (setf (slot-value obj 'extend)
+                    (lambda/duplicate-to-extend :duplicate duplicate :fmap fmap))))))
+
+  (let ((duplicate (get-argument-or-slot-value args :duplicate obj 'duplicate)))
+    (if duplicate (setf (slot-value obj 'duplicate) duplicate)
+        (let ((extend (get-argument-or-slot-value args :extend obj 'extend)))
+          (setf (slot-value obj 'duplicate)
+                (lambda/extend-to-duplicate :extend extend)))))
+
+  (let ((extend (get-argument-or-slot-value args :extend obj 'extend))
+        (extract (get-argument-or-slot-value args :extract obj 'extract)))
+    (setf (slot-value obj 'fmap)
+          (lambda (f wx)
+            (funcall extend (lambda (wx) (funcall f (funcall extract wx))) wx))))
+
+  (call-next-method)
+
+  (assert (slot-value obj 'fmap))
+  (assert (slot-value obj 'extract))
+  (assert (slot-value obj 'duplicate))
+  (assert (slot-value obj 'extend)))
+
+(defclass trivial-operators (monad-operators comonad-operators)
   ((wrap :initarg :wrap :type function :reader wrap-func)
    (unwrap :initarg :unwrap :type function :reader unwrap-func)))
 
@@ -378,27 +460,37 @@ not occur in the arguments, return `NIL'."
     (if wrap
         (setf (slot-value obj 'wrap) wrap)
         (let ((mreturn (get-argument-or-slot-value args :mreturn obj 'mreturn))
-              (pure (get-argument-or-slot-value args :pure obj 'pure)))
-          (if (or mreturn pure)
-              (setf (slot-value obj 'wrap) (or mreturn pure))
+              (pure (get-argument-or-slot-value args :pure obj 'pure))
+              (duplicate (get-argument-or-slot-value args :duplicate obj 'duplicate)))
+          (if (or mreturn pure duplicate)
+              (setf (slot-value obj 'wrap) (or mreturn pure duplicate))
               (error "`WRAP' was not provided and cannot be derived for `TRIVIAL-OPERATORS'")))))
 
   (let ((unwrap (get-argument-or-slot-value args :unwrap obj 'unwrap)))
     (if unwrap
         (setf (slot-value obj 'unwrap) unwrap)
-        (let ((flatten (get-argument-or-slot-value args :flatten obj 'flatten)))
-          (if flatten
-              (setf (slot-value obj 'unwrap) flatten)
+        (let ((flatten (get-argument-or-slot-value args :flatten obj 'flatten))
+              (extract (get-argument-or-slot-value args :extract obj 'extract)))
+          (if (or flatten extract)
+              (setf (slot-value obj 'unwrap) (or flatten extract))
               (error "`UNWRAP' was not provided and cannot be derived for `TRIVIAL-OPERATORS'")))))
 
   (setf (slot-value obj 'mreturn) (slot-value obj 'wrap))
   (setf (slot-value obj 'pure) (slot-value obj 'wrap))
+  (setf (slot-value obj 'duplicate) (slot-value obj 'wrap))
+
   (setf (slot-value obj 'flatten) (slot-value obj 'unwrap))
+  (setf (slot-value obj 'extract) (slot-value obj 'unwrap))
 
   (setf (slot-value obj 'fmap)
         (lambda/wrap-and-unwrap-to-fmap
          :wrap (slot-value obj 'wrap)
          :unwrap (slot-value obj 'unwrap)))
+
+  (let ((wrap (slot-value obj 'wrap)))
+    (setf (slot-value obj 'extend)
+          (lambda (f wx)
+            (funcall wrap (funcall f wx)))))
 
   (assert (slot-boundp obj 'wrap))
   (assert (slot-boundp obj 'unwrap))

@@ -39,6 +39,15 @@
 (defun id-unwrap (mx)
   (id-value mx))
 
+(defun id-duplicate (wx)
+  (make-id :value wx))
+
+(defun id-extract (wx)
+  (id-value wx))
+
+(defun id-extend (f wx)
+  (make-id :value (funcall f wx)))
+
 (defun sqr (x)
   (* x x))
 
@@ -125,3 +134,30 @@
          (expected (id-fmap #'sqr mx)))
     (is (equalp expected (funcall fmap #'sqr mx)))
     (is (equalp expected (fmap-from-wrap-and-unwrap #'sqr mx)))))
+
+
+(defun/duplicate-to-extend extend-from-duplicate
+  :duplicate id-duplicate
+  :fmap id-fmap)
+
+(test extend-from-duplicate
+  (flet ((func (wx)
+           (sqr (id-value wx))))
+    (let* ((extend (lambda/duplicate-to-extend
+                    :duplicate #'id-duplicate
+                    :fmap #'id-fmap))
+           (wx (id-pure 3))
+           (expected (id-extend #'func wx)))
+      (is (equalp expected (funcall extend #'func wx))
+          (equalp expected (extend #'func wx))))))
+
+(contextual-derivation:defun/extend-to-duplicate duplicate-from-extend
+  :extend id-extend)
+
+(test duplicate-from-extend
+  (let* ((duplicate (lambda/extend-to-duplicate :extend #'id-extend))
+         (wx (id-pure 3))
+         (expected (id-duplicate wx)))
+    nil
+    (is (equalp expected (funcall duplicate wx)))
+    (is (equalp expected (duplicate-from-extend wx)))))
