@@ -8,7 +8,14 @@
    #:make-sequential-monad-binding
    #:make-parallel-monad-binding
    #:make-parallel-applicative-binding
-   #:make-parallel-functor-binding))
+   #:make-parallel-functor-binding
+
+   #:make-sequential-functor-binding-ez
+   #:make-parallel-functor-binding-ez
+   #:make-parallel-applicative-binding-ez
+   #:make-monad-progn-ez
+   #:make-sequential-monad-binding-ez
+   #:make-parallel-monad-binding-ez))
 
 (in-package :binding-syntax-helpers)
 
@@ -136,3 +143,99 @@
                          :more-body more-body)))
           `(funcall (lambda (,@new-vars) ,body)
                     ,@exprs)))))
+
+(defun make-sequential-functor-binding-ez (let-name &key fmap bindings body)
+  "Return syntax for sequential functor bindings"
+  (declare (type symbol let-name fmap)
+           (type list bindings body))
+
+  (assert (not (null bindings)))
+  (assert (not (mull body)))
+
+  (destructuring-bind (binding . more-bindings) bindings
+    (destructuring-bind (body . more-body) body
+      (make-sequential-functor-binding
+       let-name
+       :fmap fmap
+       :binding binding
+       :more-bindings more-bindings
+       :body body
+       :more-body more-body))))
+
+(defun make-parallel-functor-binding-ez (let-name &key let-sequential bindings body)
+  (declare (type symbol let-name let-sequential)
+           (type list bindings body))
+
+  (assert (not (null bindings)))
+  (assert (not (null body)))
+
+  (destructuring-bind (binding . more-bindings) bindings
+    (destructuring-bind (body . more-body) body
+      (make-parallel-functor-binding
+       let-name
+       :let-sequential let-sequential
+       :binding binding
+       :more-bindings more-bindings
+       :body body
+       :more-body more-body))))
+
+(defun make-parallel-applicative-binding-ez (let-name &key fmap fapply bindings body)
+  (declare (type symbol let-name fmap fapply)
+           (type list bindings body))
+  (assert (not (null bindings)))
+  (assert (not (null body)))
+
+  (destructuring-bind (binding . more-bindings) bindings
+    (destructuring-bind (body . more-body) body
+      (make-parallel-applicative-binding
+       let-name
+       :fmap fmap
+       :fapply fapply
+       :binding binding
+       :more-bindings more-bindings
+       :body body
+       :more-body more-body))))
+
+
+(defun make-monad-progn-ez (progn-name &key flatmap body)
+  (declare (type symbol progn-name flatmap)
+           (type list body))
+  (assert (not (null body)))
+  (make-monad-progn progn-name :flatmap flatmap :body (car body) :more-body (cdr body)))
+
+
+(defun make-sequential-monad-binding-ez (let-name &key flatmap monad-progn bindings body)
+  (declare (type symbol let-name flatmap monad-progn)
+           (type list bindings body))
+  (assert (not (null body)))
+  (if (null bindings)
+      (macroexpand `(,monad-progn ,@body))
+      (destructuring-bind (binding . more-bindings) bindings
+        (destructuring-bind (body . more-body) body
+          (make-sequential-monad-binding
+             let-name
+             :flatmap flatmap
+             :monad-progn monad-progn
+             :binding binding
+             :more-bindings more-bindings
+             :body body
+             :more-body more-body)))))
+
+
+(defun make-parallel-monad-binding-ez (let-name &key flatmap sequential-let-name monad-progn bindings body)
+  (declare (type symbol let-name flatmap sequential-let-name monad-progn)
+           (type list bindings body))
+  (assert (not (null body)))
+  (if (null bindings)
+      (macroexpand `(,monad-progn ,@body))
+      (destructuring-bind (binding . more-bindings) bindings
+        (destructuring-bind (body . more-body) body
+          (make-parallel-monad-binding
+           'let-name
+           :flatmap flatmap
+           :sequential-let-name sequential-let-name
+           :monad-progn monad-progn
+           :binding binding
+           :more-bindings more-bindings
+           :body body
+           :more-body more-body)))))

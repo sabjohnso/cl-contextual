@@ -21,8 +21,9 @@
 (defstruct contextual func)
 
 (defun ctx-run (context cx)
-  (declare (type contextual cx))
-  (funcall (contextual-func cx) context))
+  (if (contextual-p cx)
+      (funcall (contextual-func cx) context)
+      cx))
 
 (defun ctx-return (x)
   (make-contextual
