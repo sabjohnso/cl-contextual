@@ -13,11 +13,18 @@
   (just value)
   (none))
 
-(declaim (ftype (function (function optional) optional) optional-flatmap))
+
+(deftype optional-constructor ()
+  '(function (t) optional))
+
+
 (defun optional-flatmap (f mx)
-  (match mx
-    ((just value) (funcall f value))
-    ((none)   mx)))
+  (declare (type optional-constructor f)
+           (type optional mx))
+  (the optional
+    (ematch mx
+      ((just value) (funcall f value))
+      ((none) mx))))
 
 (defun make-optional-context ()
   (make-instance 'monad-operators

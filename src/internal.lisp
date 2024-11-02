@@ -27,7 +27,7 @@
 (defun ctx-return (x)
   (make-contextual
    :func (lambda (ignored-context)
-           (declare (ignore context))
+           (declare (ignore ignored-context))
            x)))
 
 (defun ctx-injest (x)

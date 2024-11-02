@@ -21,14 +21,15 @@
      (:file "derivation")
      (:file "contextual")
      (:file "list")
-     (:file "optional"))))
+     (:file "optional")
+     (:file "thunk"))))
   :in-order-to ((test-op
                  (load-op :contextual)
                  (test-op :contextual/test))))
 
 (defsystem :contextual/test
   :description "Tests for the `CONTEXTUAL' system"
-  :depends-on (:fiveam)
+  :depends-on (:fiveam :contextual)
   :components
   ((:module "test"
     :serial t
@@ -38,11 +39,13 @@
      (:file "derivation-test")
      (:file "contextual-test")
      (:file "list-test")
-     (:file "optional-test"))))
+     (:file "optional-test")
+     (:file "thunk-test"))))
   :perform (test-op (o s)
              (symbol-call :binding-syntax-helpers-test :run-all-tests!)
              (symbol-call :contextual-internal-test :run-all-tests!)
              (symbol-call :contextual-derivation-test :run-all-tests!)
              (symbol-call :contextual-test :run-all-tests!)
              (symbol-call :contextual-list-test :run-all-tests!)
-             (symbol-call :contextual-optional-test :run-all-tests!)))
+             (symbol-call :contextual-optional-test :run-all-tests!)
+             (symbol-call :contextual-thunk-test :run-all-tests!)))

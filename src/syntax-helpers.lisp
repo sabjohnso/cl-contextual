@@ -50,14 +50,15 @@
                                  ,body)))))
 
 (defun make-parallel-functor-binding (let-name &key let-sequential binding more-bindings body more-body)
+  (declare (ignore let-name))
   (let* ((bindings (cons binding more-bindings))
          (vars (mapcar #'car bindings))
          (exprs (mapcar #'cadr bindings))
          (new-vars (mapcar #'gensym-like vars))
          (rebindings (mapcar #'list vars new-vars))
          (body (macroexpand `(,let-sequential (,@rebindings)
-                                ,body
-                                ,@more-body))))
+                                              ,body
+                                              ,@more-body))))
     `(funcall (lambda (,@new-vars) ,body) ,@exprs)))
 
 (defun make-curried-function (var more-vars body more-body)

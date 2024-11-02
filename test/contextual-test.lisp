@@ -6,8 +6,6 @@
 
 (in-package :contextual-test)
 
-
-
 (defun run-all-tests! ()
   (run! 'contextual))
 
@@ -294,7 +292,7 @@
 
  (defun ziplist-reverse (xs)
    (cond ((listp xs) (reverse xs))
-         ((repeatp xs) xs)))
+         ((repeat-p xs) xs)))
 
  (defun ziplist-fmap (f xs)
    (if (repeat-p xs)
@@ -407,10 +405,13 @@
          (ctx-run context (lift7 #'+ (pure 1) (pure 2) (pure 3) (pure 4) (pure 5) (pure 6) (pure 7)))))))
 
 (defmacro is-error (expr)
-  `(is-true
-    (handler-case
-        (progn ,expr nil)
-      (error (e) t))))
+  (let ((e (gensym "E")))
+    `(is-true
+      (handler-case
+          (progn ,expr nil)
+        (error (,e)
+          (declare (ignore ,e))
+          t)))))
 
 (test missing-operators
   (is-error (make-instance 'trivial-operators :wrap #'(lambda (x) (make-id :value x))))

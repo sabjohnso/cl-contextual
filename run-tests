@@ -19,8 +19,8 @@ exit $?
 (ql:quickload "trivia")
 (ql:quickload "fiveam")
 
-(asdf:load-system :contextual)
-(asdf:load-system :contextual/test)
+(asdf:oos 'asdf:load-op :contextual :force t)
+(asdf:oos 'asdf:load-op :contextual/test :force t)
 
 (defun run ()
   (if (5am:run-all-tests) 0 1))

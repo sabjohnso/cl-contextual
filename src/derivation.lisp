@@ -115,7 +115,7 @@ product operation, as derived from `FAPPLY' and `PURE'."
 (defmacro defun/product-to-fapply (name &key product fmap)
   "Define a named function that performs applicative mapping,
 as derived from the named input functions `PRODUCT' and `FMAP'"
-  (with-syms (mf mx fx f x)
+  (with-syms (mf mx fx)
     `(defun ,name (,mf ,mx)
        (,fmap (lambda (,fx)
                 (funcall (car ,fx) (cadr ,fx)))
