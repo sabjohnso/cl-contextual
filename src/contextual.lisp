@@ -549,8 +549,9 @@ not occur in the arguments, return `NIL'."
         (let ((lookup (get-argument-or-slot-value args :lookup obj 'lookup)))
           (if lookup
               (setf (slot-value obj 'ask)
-                    (lambda () (funcall lookup #'identity)))
+                    (lambda/lookup-to-ask :lookup lookup))
               (error "`ASK' was not provided and cannot be derived for `MONAD-ENVIRONMENT-OPERATORS'")))))
+
   (let ((lookup (get-argument-or-slot-value args :lookup obj 'lookup)))
     (if lookup
         (setf (slot-value obj 'lookup) lookup)
@@ -559,7 +560,7 @@ not occur in the arguments, return `NIL'."
           (assert ask)
           (assert fmap)
           (setf (slot-value obj 'lookup)
-                (lambda (f) (funcall fmap f (funcall ask)))))))
+                (lambda/ask-to-lookup :ask ask :fmap fmap)))))
 
   (let ((local (getf args :local)))
     (if local (setf (slot-value obj 'local) local)

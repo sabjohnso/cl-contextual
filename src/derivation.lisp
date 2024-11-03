@@ -12,7 +12,9 @@
    #:defun/product-to-fapply       #:lambda/product-to-fapply
    #:defun/fapply-to-fmap          #:lambda/fapply-to-fmap
    #:defun/duplicate-to-extend     #:lambda/duplicate-to-extend
-   #:defun/extend-to-duplicate     #:lambda/extend-to-duplicate))
+   #:defun/extend-to-duplicate     #:lambda/extend-to-duplicate
+   #:defun/ask-to-lookup           #:lambda/ask-to-lookup
+   #:defun/lookup-to-ask           #:lambda/lookup-to-ask))
 (in-package :contextual-derivation)
 
 (defmacro with-syms ((&rest names) &body body)
@@ -258,3 +260,28 @@ to `some-context' with an identity function."
   (flet ((extend (f wx)
            (funcall extend f wx)))
     (lambda (wx) (extend (lambda (wx) wx) wx))))
+
+(defmacro defun/ask-to-lookup (name &key ask fmap documentation)
+  (let ((documentation (if documentation (list documentation) nil)))
+    (with-syms (f)
+      `(defun ,name (,f)
+         ,@documentation
+         (,fmap ,f (,ask))))))
+
+(defun lambda/ask-to-lookup (&key ask fmap)
+  (flet ((ask () (funcall ask))
+         (fmap (f mx) (funcall fmap f mx)))
+    (lambda (f)
+      (fmap f (ask)))))
+
+
+(defmacro defun/lookup-to-ask (name &key lookup documentation)
+  (let ((documentation (if documentation (list documentation) nil)))
+    `(defun ,name ()
+       ,@documentation
+       (,lookup #'identity))))
+
+(defun lambda/lookup-to-ask (&key lookup)
+  (flet ((lookup (f) (funcall lookup f)))
+    (lambda ()
+      (lookup #'identity))))
