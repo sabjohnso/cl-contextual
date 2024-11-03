@@ -28,7 +28,7 @@
   (is (eq 'e (bf-run 'e
                (bf-flatten (bf-mreturn (bf-ask)))))))
 
-(test generic-context-functions
+(test general-context-functions
   (let ((context (make-bare-function-context)))
     (is (eq 'x (bf-run 'e (ctx-run context (pure 'x)))))
     (is (eq 'e (bf-run 'e (ctx-run context (bf-ask)))))
@@ -49,7 +49,7 @@
     (is (equal "E"
                (bf-run 'e
                  (ctx-run context
-                   (bf-asks #'symbol-name)))))
+                   (bf-lookup #'symbol-name)))))
     (is (equal "E"
                (bf-run 'e
                  (ctx-run context
@@ -59,34 +59,33 @@
 
 
 (test binding-syntax
-  (flet ((lookup (name) (lambda (e) (cdr (assoc name e)))))
+  (flet ((by-key (name) (lambda (e) (cdr (assoc name e)))))
     (is (= 3
            (bf-run '((x . 1) (y . 2))
              (ctx-run +bare-function+
                (flatten
-                (let-fun ((x (bf-asks (lookup 'x)))
-                          (y (bf-asks (lookup 'y))))
+                (let-fun ((x (bf-lookup (by-key 'x)))
+                          (y (bf-lookup (by-key 'y))))
                   (+ x y)))))))
     (is (= 3
           (bf-run '((x . 1) (y . 2))
              (ctx-run +bare-function+
-               (let-app ((x (bf-asks (lookup 'x)))
-                         (y (bf-asks (lookup 'y))))
+               (let-app ((x (bf-lookup (by-key 'x)))
+                         (y (bf-lookup (by-key 'y))))
                  (+ x y))))))
 
     (is (= 3
            (bf-run '((x . 1) (y . 2))
              (ctx-run +bare-function+
-               (let-mon ((x (bf-asks (lookup 'x)))
-                         (y (bf-asks (lookup 'y))))
+               (let-mon ((x (bf-lookup (by-key 'x)))
+                         (y (bf-lookup (by-key 'y))))
                  (mreturn (+ x y)))))))
 
     (is (= 5
            (bf-run '((x . 1) (y . 2))
              (ctx-run +bare-function+
-               (let-mon ((x (bf-asks (lookup 'x))))
-                 (bf-local (lambda (e) (cons `(x . ,(+ x 2)) e))
-                           (ctx-run +bare-function+
-                             (let-app ((x (bf-asks (lookup 'x)))
-                                       (y (bf-asks (lookup 'y))))
-                               (+ x y)))))))))))
+               (let-mon ((x (lookup (by-key 'x))))
+                 (local (lambda (e) (cons `(x . ,(+ x 2)) e))
+                        (let-app ((x (lookup (by-key 'x)))
+                                  (y (lookup (by-key 'y))))
+                          (+ x y))))))))))

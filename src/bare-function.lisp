@@ -12,7 +12,7 @@
            #:bf-flatmap
            #:bf-flatten
            #:bf-ask
-           #:bf-asks
+           #:bf-lookup
            #:bf-local
            #:let*-fun/bf
            #:let-fun/bf
@@ -60,7 +60,7 @@
   (defun bf-ask ()
     #'identity)
 
-  (defun bf-asks (f)
+  (defun bf-lookup (f)
     "Return the environment"
     (declare (type function f))
     (lambda (e)
@@ -73,13 +73,16 @@
 
   (defun make-bare-function-context ()
     "Return a monadic context for bare functions."
-    (make-instance 'monad-operators
+    (make-instance 'monad-environment-operators
       :fmap #'bf-fmap
       :fapply #'bf-fapply
       :product #'bf-product
       :mreturn #'bf-mreturn
       :flatmap #'bf-flatmap
-      :flatten #'bf-flatten)))
+      :flatten #'bf-flatten
+      :ask #'bf-ask
+      :lookup #'bf-lookup
+      :local #'bf-local)))
 
 (defmacro let*-fun/bf ((&rest bindings) &body body)
   (make-sequential-functor-binding

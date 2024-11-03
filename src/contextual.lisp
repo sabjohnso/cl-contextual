@@ -9,12 +9,15 @@
    #:wrap #:unwrap
    #:extract #:duplicate #:extend
    #:expel
+   #:ask #:lookup #:local
 
    #:fmap-func
    #:pure-func #:fapply-func #:product-func
    #:flatmap-func #:flatten-func
    #:wrap-func #:unwrap-func
    #:extract-func #:duplicate-func #:extend-func
+   #:ask-func #:asks-func #:local-func
+
    #:let*-fun #:let-fun #:let-app #:let*-mon #:let-mon
    #:lift #:lift2 #:lift3 #:lift4 #:lift5 #:lift6 #:lift7
 
@@ -23,23 +26,32 @@
    #:monad-operators
    #:comonad-operators
    #:trivial-operators
+   #:monad-environment-operators
 
    #:ctx-run))
 
 (in-package :contextual)
 
 (defgeneric fmap-func    (context))
+
 (defgeneric pure-func    (context))
 (defgeneric fapply-func  (context))
 (defgeneric product-func (context))
+
 (defgeneric mreturn-func (context))
 (defgeneric flatmap-func (context))
 (defgeneric flatten-func (context))
+
 (defgeneric wrap-func    (context))
 (defgeneric unwrap-func  (context))
+
 (defgeneric extract-func (context))
 (defgeneric duplicate-func (context))
 (defgeneric extend-func (context))
+
+(defgeneric ask-func (context))
+(defgeneric lookup-func (context))
+(defgeneric local-func (context))
 
 (defun ask-fmap ()
   (ctx-asks #'fmap-func))
@@ -76,6 +88,15 @@
 
 (defun ask-extend ()
   (ctx-asks #'extend-func))
+
+(defun ask-ask ()
+  (ctx-asks #'ask-func))
+
+(defun ask-lookup ()
+  (ctx-asks #'lookup-func))
+
+(defun ask-local ()
+  (ctx-asks #'local-func))
 
 (defun fmap (f cmx)
   "Given a function and an embelished value, return a
@@ -186,6 +207,19 @@ the value extracted from the embellishment."
                             (ctx-run ctx result)
                             result)))
              wx)))
+
+(defun ask ()
+  (let-app/ctx ((ask (ask-ask)))
+    (funcall ask)))
+
+(defun lookup (f)
+  (let-app/ctx ((lookup (ask-lookup)))
+    (funcall lookup f)))
+
+(defun local (f cmx)
+  (let-app/ctx ((local (ask-local))
+                (mx (ctx-injest cmx)))
+    (funcall local f mx)))
 
 (defmacro let*-fun (((var expr) &rest more-bindings) body &body more-body)
   (make-sequential-functor-binding
@@ -500,3 +534,33 @@ not occur in the arguments, return `NIL'."
   (assert (slot-boundp obj 'fmap))
 
   (call-next-method))
+
+
+(defclass monad-environment-operators (monad-operators)
+  ((ask    :initarg :ask   :reader ask-func)
+   (lookup :initarg :asks  :reader lookup-func)
+   (local  :initarg :local :reader local-func)))
+
+(defmethod initialize-instance ((obj monad-environment-operators) &rest args)
+  (call-next-method)
+
+  (let ((ask (get-argument-or-slot-value args :ask obj 'ask)))
+    (if ask (setf (slot-value obj 'ask) ask)
+        (let ((lookup (get-argument-or-slot-value args :lookup obj 'lookup)))
+          (if lookup
+              (setf (slot-value obj 'ask)
+                    (lambda () (funcall lookup #'identity)))
+              (error "`ASK' was not provided and cannot be derived for `MONAD-ENVIRONMENT-OPERATORS'")))))
+  (let ((lookup (get-argument-or-slot-value args :lookup obj 'lookup)))
+    (if lookup
+        (setf (slot-value obj 'lookup) lookup)
+        (let ((ask (slot-value obj 'ask))
+              (fmap (slot-value obj 'fmap)))
+          (assert ask)
+          (assert fmap)
+          (setf (slot-value obj 'lookup)
+                (lambda (f) (funcall fmap f (funcall ask)))))))
+
+  (let ((local (getf args :local)))
+    (if local (setf (slot-value obj 'local) local)
+        (error "`LOCAL' was not provided for `MONAD-ENVIRONMENT-OPERATORS'"))))
