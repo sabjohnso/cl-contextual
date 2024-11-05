@@ -1,7 +1,7 @@
 (in-package :cl-user)
 
 (defpackage :binding-syntax-helpers
-  (:use :cl)
+  (:use :cl :contextual-utility)
   (:export
    #:make-monad-progn
    #:make-sequential-functor-binding
@@ -148,9 +148,8 @@
   "Return syntax for sequential functor bindings"
   (declare (type symbol let-name fmap)
            (type list bindings body))
-
-  (assert (not (null bindings)))
-  (assert (not (mull body)))
+  (assert bindings)
+  (assert body)
 
   (destructuring-bind (binding . more-bindings) bindings
     (destructuring-bind (body . more-body) body
@@ -230,8 +229,7 @@
       (macroexpand `(,monad-progn ,@body))
       (destructuring-bind (binding . more-bindings) bindings
         (destructuring-bind (body . more-body) body
-          (make-parallel-monad-binding
-           'let-name
+          (make-parallel-monad-binding let-name
            :flatmap flatmap
            :sequential-let-name sequential-let-name
            :monad-progn monad-progn

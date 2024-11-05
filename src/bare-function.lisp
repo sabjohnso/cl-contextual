@@ -85,7 +85,7 @@
       :local #'bf-local)))
 
 (defmacro let*-fun/bf ((&rest bindings) &body body)
-  (make-sequential-functor-binding
+  (make-sequential-functor-binding-ez
    'let*-fun/bf
    :fmap 'bf-fmap
    :bindings bindings
@@ -121,7 +121,7 @@
    :body body))
 
 (defmacro let-mon/bf ((&rest bindings) &body body)
-  (make-parallel-monad-binding
+  (make-parallel-monad-binding-ez
    'let-mon/bf
    :flatmap 'bf-flatmap
    :sequential-let-name 'let*-mon/bf

@@ -149,7 +149,7 @@
            (wx (id-pure 3))
            (expected (id-extend #'func wx)))
       (is (equalp expected (funcall extend #'func wx))
-          (equalp expected (extend #'func wx))))))
+          (equalp expected (extend-from-duplicate #'func wx))))))
 
 (contextual-derivation:defun/extend-to-duplicate duplicate-from-extend
   :extend id-extend)
@@ -161,3 +161,58 @@
     nil
     (is (equalp expected (funcall duplicate wx)))
     (is (equalp expected (duplicate-from-extend wx)))))
+
+(declaim (inline bf-run bf-mreturn bf-flatmap bf-ask bf-local))
+
+(defun bf-run (e mx)
+  (funcall mx e))
+
+(defun bf-mreturn (x)
+  (lambda (e )(declare (ignore e)) x))
+
+(defun bf-flatmap (f mx)
+  (lambda (e)
+    (bf-run e (funcall f (bf-run e mx)))))
+
+(defun bf-ask ()
+  (lambda (e) e))
+
+(defun bf-local (f mx)
+  (lambda (e)
+    (bf-run (funcall f e) mx)))
+
+
+(derive-environment-monad-interface bf
+  :mreturn bf-mreturn
+  :flatmap bf-flatmap
+  :ask bf-ask
+  :local bf-local)
+
+(test derived-environment-monad-interface
+   (let ((e '(:x 3 :y 4)))
+     (flet ((by-key (k) (lambda (e) (getf e k))))
+       (is (= 3 (bf-run e (bf-pure 3))))
+       (is (= 3 (bf-run e (bf-lookup (by-key :x)))))
+       (is (= 4 (bf-run e (bf-lookup (by-key :y)))))
+       (is (= 9 (bf-run e (bf-fmap #'sqr (bf-lookup (by-key :x))))))
+       (is (= 7 (bf-run e (bf-fapply (bf-fmap (lambda (x) (lambda (y) (+ x y)))
+                                              (bf-lookup (by-key :x)))
+                                     (bf-lookup (by-key :y))))))
+       (is (= 7
+              (bf-run e
+                (bf-flatten
+                 (let-fun/bf ((x (bf-lookup (by-key :x)))
+                              (y (bf-lookup (by-key :y))))
+                   (+ x y))))))
+       (is (= 7
+              (bf-run e
+                (let-app/bf ((x (bf-lookup (by-key :x)))
+                             (y (bf-lookup (by-key :y))))
+                        (+ x y)))))
+
+
+       (is (= 7
+             (bf-run e
+               (let-mon/bf ((x (bf-lookup (by-key :x)))
+                            (y (bf-lookup (by-key :y))))
+                 (bf-mreturn (+ x y)))))))))

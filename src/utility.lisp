@@ -2,10 +2,31 @@
 
 (defpackage :contextual-utility
   (:use :cl)
-  (:export #:define-constant
-           #:defunion))
+  (:export #:with-syms
+           #:when-missing
+           #:define-constant
+           #:defunion
+           #:format-symbol
+           #:read-string))
 
 (in-package :contextual-utility)
+
+(defmacro with-syms ((&rest names) &body body)
+  (labels ((symbindings (names accum)
+             (if (null names)
+                 (reverse accum)
+                 (destructuring-bind (name . names) names
+                   (symbindings names (cons `(,name ',(gensym (symbol-name name))) accum))))))
+    `(let (,@(symbindings names nil))
+       ,@body)))
+
+(defun read-string (string)
+  (with-input-from-string (inp string)
+    (read inp)))
+
+
+(defmacro when-missing (test-value form)
+  `(if ,test-value nil (list ,form)))
 
 (defmacro define-constant (name value &optional doc)
   `(defconstant ,name (if (boundp ',name) (symbol-value ',name) ,value)
@@ -14,6 +35,9 @@
 (eval-when (:load-toplevel :compile-toplevel :execute)
 
   (declaim (ftype (function (symbol) keyword) symbol-to-keyword))
+
+  (defun format-symbol (fmt sym)
+    (read-string (format nil fmt sym)))
 
   (defun symbol-to-keyword (sym)
     (if (keywordp sym) sym
@@ -79,7 +103,7 @@
 
   (defun make-union-type-predicate (name)
     (let ((predicate-name (intern (concatenate 'string (symbol-name name) "-P"))))
-      (let ((arg (gensym "ARG")))
+      (with-syms (arg)
       `(defun ,predicate-name (,arg)
          (typep ,arg ',name))))))
 
