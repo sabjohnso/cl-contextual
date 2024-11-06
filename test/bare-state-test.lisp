@@ -1,7 +1,7 @@
 (in-package :cl-user)
 
 (defpackage :contextual-bare-state-test
-  (:use :cl :fiveam :contextual :contextual-bare-state)
+  (:use :cl :fiveam :trivia :contextual :contextual-bare-state)
   (:export #:run-all-tests!))
 
 (in-package :contextual-bare-state-test)
@@ -27,7 +27,18 @@
   (is (equal '(s s) (bs-run 's (bs-mget))))
   (is (equal '("S" s) (bs-run 's (bs-select #'symbol-name))))
   (is (equal '(nil s1) (bs-run 's0 (bs-mput 's1))))
-  (is (equal '(nil "S") (bs-run 's (bs-modify #'symbol-name)))))
+  (is (equal '(nil "S") (bs-run 's (bs-modify #'symbol-name))))
+  (let ((s0 '((x . 1) (y . 2))))
+           (flet ((by-key (k) (lambda (s) (cdr (assoc k s0)))))
+             (is (equal (list 3 s0)
+                        (bs-run s0
+                          (bs-bind
+                           (bs-select (by-key 'x))
+                           (lambda (x)
+                             (bs-bind
+                              (bs-select (by-key 'y))
+                              (lambda (y)
+                                (bs-mreturn (+ x y))))))))))))
 
 
 (defmacro show (expr)
@@ -105,3 +116,34 @@
                      (let-app/bs ((x (bs-select (by-key 'x)))
                                   (y (bs-select (by-key 'y))))
                        (+ x y)))))))))
+
+
+;; Update the state of a game base on the input. The state is a tripple
+;; with a flag indicating if it is `ON' or `OFF' followed by the score
+;; for `A' and followed by the score for `B'.  Valid inputs are one of
+;; the symbol `A', `B', `ON' or `OFF'. Invalid inputs are just ignored
+;; and the state is
+(defun update-state (input)
+  (lambda (state)
+    (match (list input state)
+           ((list 'on  (list 'off a b)) (list 'on  a b))
+           ((list 'off (list 'on  a b)) (list 'off a b))
+           ((list 'a   (list 'on  a b)) (list 'on  (1+ a) b))
+           ((list 'b   (list 'on  a b)) (list 'on  a (1+ b)))
+           ((list _ state) (format t "~s" `(:input ,input :state ,state)) state))))
+
+;; Construct the stateful computation of a game based on the input listn
+(defun game (inputs)
+  (declare (type list inputs))
+  (if (null inputs) (bs-mreturn nil)
+      (destructuring-bind (input . more-inputs) inputs
+        (progn-mon/bs
+          (bs-modify (update-state input))
+          (game more-inputs)))))
+
+(test game
+  (let ((initial-state '(off 0 0)))
+    (is (eq nil (bs-exec initial-state (game '(on)))))
+    (is (equal '(on 0 0) (bs-eval initial-state (game '(on)))))
+    (is (equal '(off 1 0) (bs-eval initial-state (game '(on a off)))))
+    (is (equal '(off 2 1) (bs-eval initial-state (game '(on a b a off)))))))

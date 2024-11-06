@@ -5,10 +5,10 @@
   (:nicknames :bs)
   (:use :cl :contextual :contextual-derivation)
   (:export
-   #:bs-run
+   #:bs-run #:bs-exec #:bs-eval
    #:bs-fmap
    #:bs-pure #:bs-fapply #:bs-product
-   #:bs-mreturn #:bs-flatmap #:bs-flatten
+   #:bs-mreturn #:bs-flatmap #:bs-bind #:bs-flatten
    #:bs-mget #:bs-mput #:bs-select #:bs-modify
    #:let*-fun/bs #:let-fun/bs
    #:let-app/bs
@@ -22,6 +22,22 @@ returns the result of calling `MX' with `S'."
 
   (declare (type function mx))
   (funcall mx s))
+
+
+(defun bs-exec (s mx)
+  "Return the value from the running the the input stateful
+calculation, `MX' with the initial state `S'"
+
+  (declare (type function mx))
+  (car (bs-run s mx)))
+
+(defun bs-eval (s mx)
+  "Return the final state from the running the the input stateful
+calculation, `MX' with the initial state `S', ignoring the final value."
+
+  (declare (type function mx))
+  (cadr (bs-run s mx)))
+
 
 (defun bs-mreturn (x)
   "Wraps a value `X' in a state monad: returns a function that, when
