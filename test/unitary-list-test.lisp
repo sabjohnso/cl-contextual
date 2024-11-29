@@ -1,6 +1,7 @@
 (in-package :cl-user)
 (defpackage :contextual-unitary-list-test
   (:use :cl :5am :contextual :contextual-unitary-list)
+  (:shadowing-import-from :contextual #:fail)
   (:export :run-all-tests!))
 
 (in-package :contextual-unitary-list-test)

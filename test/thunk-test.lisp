@@ -2,6 +2,7 @@
 
 (defpackage :contextual-thunk-test
   (:use :cl :5am :contextual :contextual-thunk)
+  (:shadowing-import-from :contextual #:fail)
   (:export #:run-all-tests!))
 
 (in-package :contextual-thunk-test)

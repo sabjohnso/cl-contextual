@@ -86,6 +86,11 @@
    #:extract-func #:duplicate-func #:extend-func
    #:ask-func #:asks-func #:local-func
 
+   #:fail
+   #:fail-func
+   #:mzero #:mplus
+   #:mzero-func #:mplus-func
+
    #:let*-fun #:let-fun #:let-app #:let*-mon #:let-mon
    #:lift #:lift2 #:lift3 #:lift4 #:lift5 #:lift6 #:lift7
 
@@ -95,6 +100,8 @@
    #:comonad-operators
    #:trivial-operators
    #:monad-environment-operators
+   #:monad-fail-operators
+   #:monad-plus-operators
 
    #:ctx-run))
 

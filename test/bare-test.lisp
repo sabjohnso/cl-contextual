@@ -1,6 +1,7 @@
 (in-package :cl-user)
 (defpackage :contextual-bare-test
   (:use :cl :5am :contextual :contextual-bare)
+  (:shadowing-import-from :contextual #:fail)
   (:export #:run-all-tests!))
 
 (in-package :contextual-bare-test)

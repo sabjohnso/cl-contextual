@@ -2,6 +2,7 @@
 
 (defpackage :contextual-optional-test
   (:use :cl :5am :contextual-utility :contextual :contextual-optional)
+  (:shadowing-import-from :contextual #:fail)
   (:export #:run-all-tests))
 
 (in-package :contextual-optional-test)

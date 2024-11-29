@@ -2,6 +2,7 @@
 
 (defpackage :contextual-list-test
   (:use :cl :5am :contextual :contextual-list)
+  (:shadowing-import-from :contextual #:fail)
   (:export #:run-all-tests!))
 
 (in-package :contextual-list-test)
@@ -57,3 +58,16 @@
   (let ((xss '((1 2) (3 4))))
     (is (equal (loop for xs in xss appending xs)
                (ctx-run +list+ (flatten xss))))))
+
+(test monad-fail
+  (is (equal '() (ctx-run +list+ (fail "Yikes!")))))
+
+(test monad-plus
+  (is (equal '() (ctx-run +list+ (mzero))))
+  (let ((xs '(a b c))
+        (ys '(d e f)))
+    (is (equal xs (ctx-run +list+ (mplus xs (mzero)))))
+    (is (equal xs (ctx-run +list+ (mplus (mzero) xs))))
+    (is (equal (append xs ys)
+               (ctx-run +list+
+                 (mplus xs ys))))))

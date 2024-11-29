@@ -2,6 +2,7 @@
 
 (defpackage :contextual-bare-state-test
   (:use :cl :fiveam :trivia :contextual :contextual-bare-state)
+  (:shadowing-import-from :contextual #:fail)
   (:export #:run-all-tests!))
 
 (in-package :contextual-bare-state-test)

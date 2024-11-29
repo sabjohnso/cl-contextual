@@ -2,6 +2,7 @@
 
 (defpackage :contextual-bare-function-test
   (:use :cl :5am :contextual :contextual-bare-function)
+  (:shadowing-import-from :contextual #:fail)
   (:export #:run-all-tests!))
 
 (in-package :contextual-bare-function-test)

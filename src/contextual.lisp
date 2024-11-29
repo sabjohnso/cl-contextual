@@ -21,6 +21,10 @@
 (defgeneric lookup-func (context))
 (defgeneric local-func (context))
 
+(defgeneric fail-func (context))
+(defgeneric mzero-func (context))
+(defgeneric mplus-func (context))
+
 (defun ask-fmap ()
   (ctx-asks #'fmap-func))
 
@@ -65,6 +69,15 @@
 
 (defun ask-local ()
   (ctx-asks #'local-func))
+
+(defun ask-fail ()
+  (ctx-asks #'fail-func))
+
+(defun ask-mzero ()
+  (ctx-asks #'mzero-func))
+
+(defun ask-mplus ()
+  (ctx-asks #'mplus-func))
 
 (defun fmap (f cmx)
   "Given a function and an embelished value, return a
@@ -188,6 +201,20 @@ the value extracted from the embellishment."
   (let-app/ctx ((local (ask-local))
                 (mx (ctx-injest cmx)))
     (funcall local f mx)))
+
+(defun fail (str)
+  (let-app/ctx ((fail (ask-fail)))
+    (funcall fail str)))
+
+(defun mzero ()
+  (let-app/ctx ((mzero (ask-mzero)))
+    (funcall mzero)))
+
+(defun mplus (cmx cmy)
+  (let-app/ctx ((mplus (ask-mplus))
+                (mx cmx)
+                (my cmy))
+    (funcall mplus mx my)))
 
 (defmacro let*-fun (((var expr) &rest more-bindings) body &body more-body)
   (make-sequential-functor-binding
@@ -533,3 +560,32 @@ not occur in the arguments, return `NIL'."
   (let ((local (getf args :local)))
     (if local (setf (slot-value obj 'local) local)
         (error "`LOCAL' was not provided for `MONAD-ENVIRONMENT-OPERATORS'"))))
+
+(defclass monad-fail-operators (monad-operators)
+  ((fail :initarg :fail :reader fail-func)))
+
+(defmethod initialize-instance ((obj monad-fail-operators) &rest args)
+  (call-next-method)
+  (let ((fail (get-argument-or-slot-value args :fail obj 'fail)))
+    (assert fail)
+    (setf (slot-value obj 'fail) fail)))
+
+(defclass monad-plus-operators (monad-fail-operators)
+  ((mzero :initarg :mzero :reader mzero-func)
+   (mplus :initarg :mplus :reader mplus-func)))
+
+(defmethod initialize-instance ((obj monad-plus-operators) &rest args)
+  (let ((mzero (get-argument-or-slot-value args :mzero obj 'mzero)))
+    (setf (slot-value obj 'mzero) mzero))
+
+  (let ((mplus (get-argument-or-slot-value args :mplus obj 'mplus)))
+    (setf (slot-value obj 'mplus) mplus))
+
+  (let ((fail (get-argument-or-slot-value args :fail obj 'fail)))
+    (if fail (setf (slot-value obj 'fail) fail)
+        (let ((mzero (slot-value obj 'mzero)))
+          (setf (slot-value obj 'fail)
+                (lambda (str)
+                  (declare (ignore str))
+                  (funcall mzero))))))
+  (call-next-method))

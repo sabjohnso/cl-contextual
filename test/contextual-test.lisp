@@ -2,6 +2,7 @@
 
 (defpackage :contextual-test
   (:use :cl :5am :contextual-utility :contextual)
+  (:shadowing-import-from :contextual #:fail)
   (:export #:run-all-tests!))
 
 (in-package :contextual-test)

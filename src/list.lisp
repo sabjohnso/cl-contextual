@@ -19,6 +19,8 @@
        (recur xs nil)))))
 
 (define-constant +list+
-    (make-instance 'monad-operators
+    (make-instance 'monad-plus-operators
       :pure #'list
-      :flatmap #'list-flatmap))
+      :flatmap #'list-flatmap
+      :mzero (lambda () nil)
+      :mplus #'append))
