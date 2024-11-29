@@ -71,3 +71,13 @@
     (is (equal (append xs ys)
                (ctx-run +list+
                  (mplus xs ys))))))
+
+(test monoid-from-monad-plus
+  (is (equal '() (ctx-run +list+ (mempty))))
+  (let ((xs '(a b c))
+        (ys '(d e f)))
+    (is (equal xs (ctx-run +list+ (mappend xs (mempty)))))
+    (is (equal xs (ctx-run +list+ (mappend (mempty) xs))))
+    (is (equal (append xs ys)
+               (ctx-run +list+
+                 (mappend xs ys))))))

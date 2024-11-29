@@ -91,9 +91,13 @@
    #:mzero #:mplus
    #:mzero-func #:mplus-func
 
+   #:mempty
+   #:mappend
+
    #:let*-fun #:let-fun #:let-app #:let*-mon #:let-mon
    #:lift #:lift2 #:lift3 #:lift4 #:lift5 #:lift6 #:lift7
 
+   #:monoid-operators
    #:functor-operators
    #:applicative-operators
    #:monad-operators
