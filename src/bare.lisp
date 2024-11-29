@@ -1,10 +1,3 @@
-(in-package :cl-user)
-
-(defpackage :contextual-bare
-  (:use :cl :contextual)
-  (:export #:make-bare-context))
-
-
 (in-package :contextual-bare)
 
 (defun make-bare-context ()

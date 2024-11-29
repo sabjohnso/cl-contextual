@@ -1,9 +1,3 @@
-(in-package :cl-user)
-
-(defpackage :contextual-list
-  (:use :cl :contextual-utility :contextual)
-  (:export #:+list+))
-
 (in-package :contextual-list)
 
 (eval-when (:load-toplevel :compile-toplevel)

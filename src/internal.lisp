@@ -1,21 +1,3 @@
-(in-package :cl-user)
-(defpackage :contextual-internal
-  (:use :cl :binding-syntax-helpers)
-  (:export #:contextual-p
-           #:ctx-run
-           #:ctx-return
-           #:ctx-injest
-           #:ctx-fmap
-           #:ctx-fapply
-           #:ctx-product
-           #:ctx-flatmap
-           #:ctx-flatten
-           #:ctx-ask
-           #:ctx-asks
-           #:let*-fun/ctx
-           #:let-app/ctx
-           #:let*-mon/ctx))
-
 (in-package :contextual-internal)
 
 (defstruct contextual func)

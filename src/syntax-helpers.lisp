@@ -1,22 +1,3 @@
-(in-package :cl-user)
-
-(defpackage :binding-syntax-helpers
-  (:use :cl :contextual-utility)
-  (:export
-   #:make-monad-progn
-   #:make-sequential-functor-binding
-   #:make-sequential-monad-binding
-   #:make-parallel-monad-binding
-   #:make-parallel-applicative-binding
-   #:make-parallel-functor-binding
-
-   #:make-sequential-functor-binding-ez
-   #:make-parallel-functor-binding-ez
-   #:make-parallel-applicative-binding-ez
-   #:make-monad-progn-ez
-   #:make-sequential-monad-binding-ez
-   #:make-parallel-monad-binding-ez))
-
 (in-package :binding-syntax-helpers)
 
 (defun binding-pair-p (x)

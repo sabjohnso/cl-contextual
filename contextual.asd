@@ -14,8 +14,10 @@
   :serial t
   :components
   ((:module "src"
+    :serial t
     :components
-    ((:file "utility")
+    ((:file "package")
+     (:file "utility")
      (:file "syntax-helpers")
      (:file "internal")
      (:file "derivation")

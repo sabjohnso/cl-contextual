@@ -1,25 +1,3 @@
-(in-package :cl-user)
-
-(defpackage :contextual-bare-function
-  (:use :cl :binding-syntax-helpers :contextual :contextual-utility)
-  (:export #:make-bare-function-context
-           #:+bare-function+
-           #:bf-run
-           #:bf-fmap
-           #:bf-pure
-           #:bf-fapply
-           #:bf-mreturn
-           #:bf-flatmap
-           #:bf-flatten
-           #:bf-ask
-           #:bf-lookup
-           #:bf-local
-           #:let*-fun/bf
-           #:let-fun/bf
-           #:let-app/bf
-           #:let*-mond/bf
-           #:let-mon/bf))
-
 (in-package :contextual-bare-function)
 
 (eval-when (:load-toplevel :compile-toplevel)

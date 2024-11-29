@@ -1,9 +1,3 @@
-(in-package :cl-user)
-
-(defpackage :contextual-thunk
-  (:use :cl :contextual)
-  (:export #:thunk #:thunk-wrap #:thunk-unwrap #:make-thunk-context))
-
 (in-package :contextual-thunk)
 
 (defmacro thunk (&rest exprs)

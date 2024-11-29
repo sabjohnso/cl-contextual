@@ -24,9 +24,6 @@ exit $?
 
 (declaim (optimize (sb-cover:store-coverage-data 0)))
 (asdf:oos 'asdf:load-op :contextual :force t)
-(asdf:oos 'asdf:load-op  :contextual/test :force t)
-
-
 
 (declaim (optimize sb-cover:store-coverage-data))
 (asdf:oos 'asdf:load-op :contextual :force t)

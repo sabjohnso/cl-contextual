@@ -1,14 +1,3 @@
-(in-package :cl-user)
-
-(defpackage :contextual-utility
-  (:use :cl)
-  (:export #:with-syms
-           #:when-missing
-           #:define-constant
-           #:defunion
-           #:format-symbol
-           #:read-string))
-
 (in-package :contextual-utility)
 
 (defmacro with-syms ((&rest names) &body body)

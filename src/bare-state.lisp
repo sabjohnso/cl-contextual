@@ -1,19 +1,3 @@
-(in-package :cl-user)
-
-
-(defpackage :contextual-bare-state
-  (:nicknames :bs)
-  (:use :cl :contextual :contextual-derivation)
-  (:export
-   #:bs-run #:bs-exec #:bs-eval
-   #:bs-fmap
-   #:bs-pure #:bs-fapply #:bs-product
-   #:bs-mreturn #:bs-flatmap #:bs-bind #:bs-flatten
-   #:bs-mget #:bs-mput #:bs-select #:bs-modify
-   #:let*-fun/bs #:let-fun/bs
-   #:let-app/bs
-   #:progn-mon/bs #:let*-mon/bs #:let-mon/bs))
-
 (in-package :contextual-bare-state)
 
 (defun bs-run (s mx)
@@ -127,15 +111,24 @@ with the updated state."
 (defun bs-select (f)
   "Projects a value out of the current state by applying `F' to the
 result of `BS-MGET'."
-
   (lambda (s)
     (list (funcall f s) s)))
 
+(defun bs-state (mx)
+  "Embed a simple state action into the monad. For the
+bare state monad, this is simply the identity funcion."
+  mx)
 
-(derive-monad-interface bs
-  :fmap bs-fmap
-  :pure bs-pure
-  :fapply bs-fapply
+
+(derive-state-monad-interface bs
+  :state   bs-state
+  :mput    bs-mput
+  :select  bs-select
+  :mget    bs-mget
+  :modify  bs-modify
+  :fmap    bs-fmap
+  :pure    bs-pure
+  :fapply  bs-fapply
   :product bs-product
   :mreturn bs-mreturn
   :flatmap bs-flatmap

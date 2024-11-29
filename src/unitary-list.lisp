@@ -1,8 +1,3 @@
-(in-package :cl-user)
-(defpackage :contextual-unitary-list
-  (:use :cl :contextual)
-  (:export #:make-unitary-list-context #:unitary-list-p #:unitary-list))
-
 (in-package :contextual-unitary-list)
 
 (defun unitary-list-p (arg)

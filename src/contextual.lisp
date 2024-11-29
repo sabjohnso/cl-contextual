@@ -1,35 +1,3 @@
-(in-package :cl-user)
-
-(defpackage :contextual
-  (:use :cl :binding-syntax-helpers :contextual-internal :contextual-derivation)
-  (:export
-   #:fmap
-   #:pure #:fapply #:product
-   #:mreturn #:flatmap #:flatten
-   #:wrap #:unwrap
-   #:extract #:duplicate #:extend
-   #:expel
-   #:ask #:lookup #:local
-
-   #:fmap-func
-   #:pure-func #:fapply-func #:product-func
-   #:flatmap-func #:flatten-func
-   #:wrap-func #:unwrap-func
-   #:extract-func #:duplicate-func #:extend-func
-   #:ask-func #:asks-func #:local-func
-
-   #:let*-fun #:let-fun #:let-app #:let*-mon #:let-mon
-   #:lift #:lift2 #:lift3 #:lift4 #:lift5 #:lift6 #:lift7
-
-   #:functor-operators
-   #:applicative-operators
-   #:monad-operators
-   #:comonad-operators
-   #:trivial-operators
-   #:monad-environment-operators
-
-   #:ctx-run))
-
 (in-package :contextual)
 
 (defgeneric fmap-func    (context))

@@ -1,33 +1,10 @@
-(in-package :cl-user)
-
-(defpackage :contextual-derivation
-  (:use :cl :contextual-utility :binding-syntax-helpers)
-  (:export
-   #:defun/flatmap-to-fmap         #:lambda/flatmap-to-fmap
-   #:defun/wrap-and-unwrap-to-fmap #:lambda/wrap-and-unwrap-to-fmap
-   #:defun/flatmap-to-flatten      #:lambda/flatmap-to-flatten
-   #:defun/flatten-to-flatmap      #:lambda/flatten-to-flatmap
-   #:defun/flatmap-to-fapply       #:lambda/flatmap-to-fapply
-   #:defun/fapply-to-product       #:lambda/fapply-to-product
-   #:defun/product-to-fapply       #:lambda/product-to-fapply
-   #:defun/fapply-to-fmap          #:lambda/fapply-to-fmap
-   #:defun/duplicate-to-extend     #:lambda/duplicate-to-extend
-   #:defun/extend-to-duplicate     #:lambda/extend-to-duplicate
-   #:defun/ask-to-lookup           #:lambda/ask-to-lookup
-   #:defun/lookup-to-ask           #:lambda/lookup-to-ask
-
-   #:derive-functor-interface
-   #:derive-applicative-interface
-   #:derive-monad-interface
-   #:derive-environment-monad-interface
-   #:derive-trivial-interface
-   #:derive-comonad-interface))
-
 (in-package :contextual-derivation)
 
 (defmacro defun/flatmap-to-fmap (name &key flatmap mreturn)
   "Define a named function that performs functor mapping,
 as derived from `FLATMAP' and `MRETURN'"
+  (assert flatmap)
+  (assert mreturn)
   (with-syms (f mx x)
     `(defun ,name (,f ,mx)
        (,flatmap (lambda (,x) (,mreturn (funcall ,f ,x))) ,mx))))
@@ -35,6 +12,8 @@ as derived from `FLATMAP' and `MRETURN'"
 (defun lambda/flatmap-to-fmap (&key flatmap mreturn)
   "Return an unnamed function that performs functor mapping,
 as derived from `FLATMAP' and `MRETURN'"
+  (assert flatmap)
+  (assert mreturn)
   (flet ((flatmap (f mx) (funcall flatmap f mx))
          (mreturn (x) (funcall mreturn x)))
     (lambda (f mx)
@@ -43,6 +22,8 @@ as derived from `FLATMAP' and `MRETURN'"
 (defmacro defun/wrap-and-unwrap-to-fmap (name &key wrap unwrap)
   "Return and unnamed function that performs functor mapping, as
 derived from `WRAP' and `UNWRAP' for a trivial context"
+  (assert wrap)
+  (assert unwrap)
   (with-syms (f mx)
     `(defun ,name (,f ,mx)
        (,wrap (funcall ,f (,unwrap ,mx))))))
@@ -50,6 +31,8 @@ derived from `WRAP' and `UNWRAP' for a trivial context"
 (defun lambda/wrap-and-unwrap-to-fmap (&key wrap unwrap)
   "Return and unnamed function that performs functor mapping, as
 derived from `WRAP' and `UNWRAP' for a trivial context"
+  (assert wrap)
+  (assert unwrap)
   (flet ((wrap (x) (funcall wrap x))
          (unwrap (mx) (funcall unwrap mx)))
     (lambda (f mx) (wrap (funcall f (unwrap mx))))))
@@ -58,6 +41,7 @@ derived from `WRAP' and `UNWRAP' for a trivial context"
 (defmacro defun/flatmap-to-flatten (name &key flatmap)
   "Define a named function that performs monadic flattening,
 as derived from `FLATMAP'."
+  (assert flatmap)
   (with-syms  (mmx mx)
     `(defun ,name (,mmx)
        (,flatmap (lambda (,mx) ,mx) ,mmx))))
@@ -65,6 +49,7 @@ as derived from `FLATMAP'."
 (defun lambda/flatmap-to-flatten (&key flatmap)
   "Return an unnamed function that performs monadic flattening,
 as derived from `FLATMAP'."
+  (assert flatmap)
   (flet ((flatmap (f mx) (funcall flatmap f mx)))
     (lambda (mmx)
       (flatmap (lambda (mx) mx) mmx))))
@@ -72,6 +57,8 @@ as derived from `FLATMAP'."
 (defmacro defun/flatten-to-flatmap (name &key flatten fmap)
   "Define a named function performing monadic mapping,
 as derived from `FLATTEN' and `FMAP'"
+  (assert flatten)
+  (assert fmap)
   (with-syms (f mx)
     `(defun ,name (,f ,mx)
        (,flatten (,fmap ,f ,mx)))))
@@ -277,6 +264,8 @@ to some-context with an identity function."
     (lambda (wx) (extend (lambda (wx) wx) wx))))
 
 (defmacro defun/ask-to-lookup (name &key ask fmap documentation)
+  (assert ask)
+  (assert fmap)
   (let ((documentation (if documentation (list documentation) nil)))
     (with-syms (f)
       `(defun ,name (,f)
@@ -284,6 +273,8 @@ to some-context with an identity function."
          (,fmap ,f (,ask))))))
 
 (defun lambda/ask-to-lookup (&key ask fmap)
+  (assert ask)
+  (assert fmap)
   (flet ((ask () (funcall ask))
          (fmap (f mx) (funcall fmap f mx)))
     (lambda (f)
@@ -291,15 +282,170 @@ to some-context with an identity function."
 
 
 (defmacro defun/lookup-to-ask (name &key lookup documentation)
+  (assert lookup)
   (let ((documentation (if documentation (list documentation) nil)))
     `(defun ,name ()
        ,@documentation
        (,lookup #'identity))))
 
 (defun lambda/lookup-to-ask (&key lookup)
+  (assert lookup)
   (flet ((lookup (f) (funcall lookup f)))
     (lambda ()
       (lookup #'identity))))
+
+
+(defmacro defun/mget-to-state (name &key mget mput mreturn flatmap documentation)
+  (assert mget)
+  (assert mput)
+  (assert mreturn)
+  (assert flatmap)
+  (let ((documentation (if documentation (list documentation) nil)))
+    (with-syms (f s x ignored)
+      `(defun ,name (,f)
+         ,@documentation
+         (,flatmap (lambda (,s)
+                     (destructuring-bind (,x ,s) (funcall ,f ,s)
+                       (,flatmap (lambda (,ignored) (declare (ignore ignored))
+                                   (,mreturn ,x))
+                                 (,mput ,s))))
+                   (,mget))))))
+
+(defun lambda/mget-to-state (&key mget flatmap)
+  (assert mget)
+  (assert flatmap)
+  (flet ((mget () (funcall mget))
+         (flatmap (f mx) (funcall flatmap f mx)))
+    (lambda (f)
+      (flatmap (lambda (s) (funcall f s)) (mget)))))
+
+
+;; FIXME: Surely, this isn't a minimal derivation of state.
+(defmacro defun/select-to-state (name &key select mput mreturn flatmap documentation)
+  (assert select)
+  (assert mput)
+  (assert mreturn)
+  (assert flatmap)
+  (let ((documentation (if documentation (list documentation) nil)))
+    (with-syms (f x/s x s ignored)
+      `(defun ,name (,f)
+         ,@documentation
+         (,flatmap (lambda (,x/s)
+                     (destructuring-bind (,x ,s) ,x/s
+                       (,flatmap (lambda (,ignored)
+                                   (declare (ignore ,ignored))
+                                   (,mreturn ,x))
+                                 (,mput ,s))))
+                   (,select ,f))))))
+
+(defun lambda/select-to-state (&key select mput mreturn flatmap)
+  (assert select)
+  (assert mput)
+  (assert mreturn)
+  (assert flatmap)
+  (flet ((select (f) (funcall select f))
+         (mput (s) (funcall mput s))
+         (mreturn (x) (funcall mreturn x))
+         (bind (mx f) (funcall flatmap f mx)))
+    (lambda (f)
+      (bind (select f)
+            (lambda (x/s)
+              (destructuring-bind (x s) x/s
+                (bind (mput s)
+                      (lambda (ignored) (declare (ignore ignored))
+                        (mreturn x)))))))))
+
+(defmacro defun/state-to-mget (name &key state documentation)
+  (assert state)
+  (let ((documentation (and documentation (list documentation))))
+    (with-syms (s)
+      `(defun ,name ()
+         ,@documentation
+         (,state (lambda (,s) (list ,s ,s)))))))
+
+(defun lambda/state-to-mget (&key state)
+  (assert state)
+  (flet ((state (f) (funcall state f)))
+    (lambda () (state (lambda (s) (list s s))))))
+
+(defmacro defun/state-to-select (name &key state documentation)
+  (assert state)
+  (let ((documentation (and documentation (list documentation))))
+    (with-syms (f s)
+      `(defun ,name (,f)
+         ,@documentation
+         (,state (lambda (,s) (list (funcall ,f ,s) ,s)))))))
+
+(defun lambda/state-to-select (&key state)
+  (assert state)
+  (flet ((state (f) (funcall state f)))
+    (lambda (f) (state (lambda (s) (list (funcall f s) s))))))
+
+(defmacro defun/select-to-mget (name &key select documentation)
+  (assert select)
+  (let ((documentation (if documentation (list documentation) nil)))
+    `(defun ,name ()
+       ,@documentation
+       (,select #'identity))))
+
+(defun lambda/select-to-mget (&key select)
+  (assert select)
+  (flet ((select (f) (funcall select f)))
+    (lambda () (select #'identity))))
+
+
+(defmacro defun/mget-to-select (name &key mget fmap documentation)
+  (assert mget)
+  (assert fmap)
+  (let ((documentation (if documentation (list documentation) nil)))
+    (with-syms (fun)
+      `(defun ,name (,fun)
+         ,@documentation
+         (,fmap ,fun (,mget))))))
+
+(defun lambda/mget-to-select (&key mget fmap)
+  (assert mget)
+  (assert fmap)
+  (flet ((mget () (funcall mget))
+         (fmap (f mx) (funcall fmap f mx)))
+    (lambda (f) (fmap f (mget)))))
+
+(defmacro defun/modify-to-mput (name &key modify documentation)
+  (assert modify)
+  (let ((documentation (if documentation (list documentation) nil)))
+    (with-syms (s s-ignored)
+      `(defun ,name (,s)
+         ,@documentation
+         (,modify (lambda (,s-ignored)
+                    (declare (ignore ,s-ignored))
+                    ,s))))))
+
+(defun lambda/modify-to-mput (&key modify)
+  (assert modify)
+  (flet ((modify (f) (funcall modify f)))
+    (lambda (s)
+      (modify (lambda (s-ignored)
+                (declare (ignore s-ignored))
+                s)))))
+
+(defmacro defun/mput-to-modify (name &key mput mget flatmap documentation)
+  (assert mput)
+  (assert mget)
+  (assert flatmap)
+  (let ((documentation (if documentation (list documentation) nil)))
+    (with-syms (f s)
+      `(defun ,name (,f)
+         ,@documentation
+         (,flatmap (lambda (,s) (,mput (funcall ,f ,s))) (,mget))))))
+
+(defun lambda/mput-to-modify (&key mput mget flatmap)
+  (assert mput)
+  (assert mget)
+  (assert flatmap)
+  (flet ((mput (s) (funcall mput s))
+         (mget () (funcall mget))
+         (flatmap (f mx) (funcall flatmap f mx)))
+    (lambda (f) (flatmap (lambda (s) (mput (funcall f s))) (mget)))))
 
 (defun make-functor-binding-interface ( tag &key fmap)
   (let ((let*-fun (format-symbol "LET*-FUN/~A" tag))
@@ -644,3 +790,111 @@ the fapply and fmap functions."
     `(progn
        ,@environment-monad-interface
        ',environment-monad-symbols)))
+
+
+(defun make-state-monad-interface
+    (tag &key state mget select mput modify fmap pure fapply product mreturn flatmap flatten)
+  (if (and (or state mget select) (or mput modify))
+      (multiple-value-bind (monad-interface monad-interface-symbols)
+          (make-monad-interface tag
+            :fmap fmap
+            :pure pure
+            :fapply fapply
+            :product product
+            :mreturn mreturn
+            :flatmap flatmap
+            :flatten flatten)
+        (let* ((state-name  (if state  state  (format-symbol "~A-STATE"  tag)))
+               (mget-name   (if mget   mget   (format-symbol "~A-MGET"   tag)))
+               (select-name (if select select (format-symbol "~A-SELECT" tag)))
+               (mput-name   (if mput   mput   (format-symbol "~A-MPUT"   tag)))
+               (modify-name (if modify modify (format-symbol "~A-MODIFY" tag)))
+
+
+               (state-def (when-missing state
+                            (macroexpand
+                             (if mget
+                                 `(defun/mget-to-state ,state-name
+                                    :mget ,mget-name
+                                    :mput ,mput-name
+                                    :mreturn ,(getf monad-interface-symbols :mreturn)
+                                    :flatmap ,(getf monad-interface-symbols :flatmap))
+                                 `(defun/select-to-state ,state-name
+                                    :select ,select-name
+                                    :mput ,mput-name
+                                    :mreturn ,(getf monad-interface-symbols :mreturn)
+                                    :flatmap ,(getf monad-interface-symbols :flatmap))))))
+
+               (mget-def (when-missing mget
+                           (if state
+                               `(defun/state-to-mget ,mget-name
+                                  :state ,state-name)
+                               `(defun/select-to-mget ,mget-name
+                                  :select ,select-name))))
+
+               (select-def (when-missing select
+                             (if state
+                                 `(defun/state-to-select ,select-name
+                                    :state ,state-name)
+                                 `(defun/mget-to-select ,select-name
+                                    :mget ,mget-name
+                                    :fmap ,(getf monad-interface-symbols :fmap)))))
+
+               (mput-def (when-missing mput
+                           `(defun/modify-to-mput ,mput-name
+                              :modify ,modify-name)))
+
+
+               (modify-def (when-missing modify
+                             `(defun/mput-to-modify ,modify-name
+                                :mput ,mput-name
+                                :mget ,mget-name
+                                :flatmap ,(getf monad-interface-symbols :flatmap)))))
+          (values
+           `(,@monad-interface
+             (declaim (ftype (function (t) t) ,state-name))
+             ,@state-def
+             ,@mget-def
+             ,@select-def
+             ,@mput-def
+             ,@modify-def)
+           `(,@monad-interface-symbols
+             :mget ,mget-name
+             :select ,select-name
+             :mput ,mput-name
+             :modify ,modify-name))))
+      (error (format nil "The input was not sufficient for deriving a state monad:~%~s"
+                     `(:state ,state
+                       :mget ,mget
+                       :select ,select
+                       :mput ,mput
+                       :modify ,modify
+                       :fmap ,fmap
+                       :pure ,pure
+                       :fapply ,fapply
+                       :product ,product
+                       :mreturn ,mreturn
+                       :flatmap ,flatmap
+                       :flatten ,flatten)))))
+
+
+(defmacro derive-state-monad-interface
+    (tag &key state mget select mput modify fmap pure fapply product mreturn flatmap flatten)
+  "Derivive an interface for an environment monad"
+  (multiple-value-bind (state-monad-interface state-monad-symbols)
+      (make-state-monad-interface tag
+        :state state
+        :mget mget
+        :select select
+        :mput mput
+        :modify modify
+        :fmap fmap
+        :pure pure
+        :fapply fapply
+        :product product
+        :mreturn mreturn
+        :flatmap flatmap
+        :flatten flatten)
+    `(progn
+       ,@state-monad-interface
+       ',state-monad-symbols)))
