@@ -30,7 +30,8 @@
     (is (equal '("X") (ctx-run context (fmap #'symbol-name (pure 'x)))))
     (is (equal '("X") (ctx-run context (fapply (pure #'symbol-name) (pure 'x)))))
     (is (equal '((x y)) (ctx-run context (product (pure 'x) (pure 'y)))))
-    (is (equal '("X") (ctx-run context (flatmap (lambda (x) (mreturn (symbol-name x))) (pure 'x)))))))
+    (is (equal '("X") (ctx-run context (flatmap (lambda (x) (mreturn (symbol-name x))) (pure 'x)))))
+    (is (equal '() (ctx-run context (fail "Yikes!"))))))
 
 (test binding
   (let ((context (make-unitary-list-context)))
