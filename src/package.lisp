@@ -2,12 +2,15 @@
 
 (defpackage :contextual-utility
   (:use :cl)
-  (:export #:with-syms
-           #:when-missing
-           #:define-constant
-           #:defunion
-           #:format-symbol
-           #:read-string))
+  (:export
+   #:with-init-lookup
+   #:get-argument-or-slot-value
+   #:with-syms
+   #:when-missing
+   #:define-constant
+   #:defunion
+   #:format-symbol
+   #:read-string))
 
 (defpackage :binding-syntax-helpers
   (:use :cl :contextual-utility)
@@ -69,7 +72,7 @@
    #:derive-state-monad-interface))
 
 (defpackage :contextual
-  (:use :cl :binding-syntax-helpers :contextual-internal :contextual-derivation)
+  (:use :cl :binding-syntax-helpers :contextual-utility :contextual-internal :contextual-derivation)
   (:export
    #:fmap
    #:pure #:fapply #:product
