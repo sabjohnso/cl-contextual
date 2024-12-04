@@ -22,9 +22,9 @@
   (declare (type optional-constructor f)
            (type optional mx))
   (the optional
-    (ematch mx
-      ((just value) (funcall f value))
-      ((none) mx))))
+    (etypecase mx
+      (just (funcall f (just-value mx)))
+      (none (none)))))
 
 (defun make-optional-context ()
   (make-instance 'monad-operators

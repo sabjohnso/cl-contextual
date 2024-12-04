@@ -133,3 +133,27 @@ bare state monad, this is simply the identity funcion."
   :mreturn bs-mreturn
   :flatmap bs-flatmap
   :flatten bs-flatten)
+
+
+(defun make-bare-state-context ()
+  "Return a monad state context"
+  (make-instance 'monad-state-operators
+    ;; functor
+    :fmap #'bs-fmap
+
+    ;; applicative functor
+    :pure #'bs-pure
+    :fapply #'bs-fapply
+    :product #'bs-product
+
+    ;; monad
+    :mreturn #'bs-mreturn
+    :flatmp #'bs-flatmap
+    :flatten #'bs-flatten
+
+    ;; monad-state
+    :state #'bs-state
+    :mget #'bs-mget
+    :mput #'bs-mput
+    :select #'bs-select
+    :modify #'bs-modify))

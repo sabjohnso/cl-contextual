@@ -362,6 +362,27 @@ not occur in the arguments, return `NIL'."
   (let ((arg (getf args keyword)))
     (or arg (and (slot-boundp obj slot-name) (slot-value obj slot-name)))))
 
+(defmacro with-init-lookup ((args obj) (&rest bindings) &rest body)
+  "Lookup values in both the arguments and object during object
+initialization with lookup of functions and values."
+  (let ((lookup (gensym "LOOKUP")))
+    (labels ((expand-bindings (bindings body)
+               (if (null bindings) `(progn  ,@body)
+                   (destructuring-bind (binding . bindings) bindings
+                     (if (symbolp binding)
+                         `(let ((,binding (,lookup ',binding)))
+                            ,(expand-bindings bindings body))
+                         (destructuring-bind (name . args) binding
+                           `(let ((,name (,lookup ',name)))
+                              (if ,name
+                                  (flet ((,name (,@args) (funcall ,name ,@args)))
+                                    ,(expand-bindings bindings body))
+                                  ,(expand-bindings bindings body)))))))))
+      (let ((name (gensym "NAME")))
+        `(flet ((,lookup (,name)
+                  (get-argument-or-slot-value ,args (intern (symbol-name ,name) :keyword) ,obj ,name)))
+           ,(expand-bindings bindings body))))))
+
 (deftype optional-function ()
   '(or null function))
 
@@ -594,6 +615,7 @@ not occur in the arguments, return `NIL'."
   (let ((local (getf args :local)))
     (if local (setf (slot-value obj 'local) local)
         (error "`LOCAL' was not provided for `MONAD-ENVIRONMENT-OPERATORS'"))))
+
 
 (defclass monad-fail-operators (monad-operators)
   ((fail :initarg :fail :reader fail-func)))

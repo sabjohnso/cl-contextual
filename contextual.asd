@@ -22,6 +22,7 @@
      (:file "internal")
      (:file "derivation")
      (:file "contextual")
+     (:file "monad-state")
      (:file "list")
      (:file "optional")
      (:file "thunk")

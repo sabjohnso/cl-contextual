@@ -42,6 +42,7 @@
                                 (bs-mreturn (+ x y))))))))))))
 
 
+
 (defmacro show (expr)
   (let ((result (gensym "RESULT")))
     `(progn
@@ -148,3 +149,30 @@
     (is (equal '(on 0 0) (bs-eval initial-state (game '(on)))))
     (is (equal '(off 1 0) (bs-eval initial-state (game '(on a off)))))
     (is (equal '(off 2 1) (bs-eval initial-state (game '(on a b a off)))))))
+
+;; Just like `GAME' but using contextual operators
+(defun game-contextual (inputs)
+  (declare (type list inputs))
+  (if (null inputs) (mreturn nil)
+      (destructuring-bind (input . more-inputs) inputs
+        (progn-mon
+          (modify (update-state input))
+          (game-contextual more-inputs)))))
+
+(test game-contextual
+  (let ((context (make-bare-state-context))
+        (initial-state '(off 0 0)))
+    (is (eq nil (bs-exec initial-state (ctx-run context (game '(on))))))
+    (is (equal '(on 0 0)
+          (bs-eval initial-state
+           (ctx-run context
+             (game-contextual '(on))))))
+    (is (equal '(off 1 0)
+          (bs-eval initial-state
+           (ctx-run context
+             (game '(on a off))))))
+
+    (is (equal '(off 2 1)
+          (bs-eval initial-state
+           (ctx-run context
+             (game '(on a b a off))))))))

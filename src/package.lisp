@@ -94,6 +94,8 @@
    #:mempty
    #:mappend
 
+
+   #:progn-mon
    #:let*-fun #:let-fun #:let-app #:let*-mon #:let-mon
    #:lift #:lift2 #:lift3 #:lift4 #:lift5 #:lift6 #:lift7
 
@@ -107,7 +109,16 @@
    #:monad-fail-operators
    #:monad-plus-operators
 
-   #:ctx-run))
+   #:ctx-run)
+
+  ;; Monad State
+  (:export
+   #:monad-state-operators
+   #:state
+   #:mget
+   #:mput
+   #:select
+   #:modify))
 
 (defpackage :contextual-bare
   (:use :cl :contextual)
@@ -135,16 +146,31 @@
 
 (defpackage :contextual-bare-state
   (:nicknames :bs)
-  (:use :cl :contextual :contextual-derivation)
+  (:use :cl :binding-syntax-helpers :contextual-utility :contextual-derivation :contextual)
   (:export
-   #:bs-run #:bs-exec #:bs-eval
+   #:make-bare-state-context
+   #:+bare-state+
+   #:bs-run
+   #:bs-exec
+   #:bs-eval
    #:bs-fmap
-   #:bs-pure #:bs-fapply #:bs-product
-   #:bs-mreturn #:bs-flatmap #:bs-bind #:bs-flatten
-   #:bs-mget #:bs-mput #:bs-select #:bs-modify
-   #:let*-fun/bs #:let-fun/bs
+   #:bs-pure
+   #:bs-fapply
+   #:bs-product
+   #:bs-mreturn
+   #:bs-flatmap
+   #:bs-bind
+   #:bs-flatten
+   #:bs-mget
+   #:bs-mput
+   #:bs-select
+   #:bs-modify
+   #:let*-fun/bs
+   #:let-fun/bs
    #:let-app/bs
-   #:progn-mon/bs #:let*-mon/bs #:let-mon/bs))
+   #:progn-mon/bs
+   #:let*-mon/bs
+   #:let-mon/bs))
 
 (defpackage :contextual-list
   (:use :cl :contextual-utility :contextual)
