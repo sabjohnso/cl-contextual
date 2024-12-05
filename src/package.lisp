@@ -74,6 +74,7 @@
 (defpackage :contextual
   (:use :cl :binding-syntax-helpers :contextual-utility :contextual-internal :contextual-derivation)
   (:export
+   #:ctx-injest
    #:fmap
    #:pure #:fapply #:product
    #:mreturn #:flatmap #:flatten
@@ -121,7 +122,15 @@
    #:mget
    #:mput
    #:select
-   #:modify))
+   #:modify)
+
+  ;; Category
+  (:export
+   #:category-operators
+   #:comp
+   #:id
+   #:<<<
+   #:>>>))
 
 (defpackage :contextual-bare
   (:use :cl :contextual)
