@@ -10,7 +10,8 @@
    #:define-constant
    #:defunion
    #:format-symbol
-   #:read-string))
+   #:read-string
+   #:fold))
 
 (defpackage :binding-syntax-helpers
   (:use :cl :contextual-utility)
@@ -130,7 +131,16 @@
    #:comp
    #:id
    #:<<<
-   #:>>>))
+   #:>>>)
+
+  ;; Arrow
+  (:export
+   #:arrow-operators
+   #:arr
+   #:split
+   #:fst
+   #:snd
+   #:fanout))
 
 (defpackage :contextual-bare
   (:use :cl :contextual)

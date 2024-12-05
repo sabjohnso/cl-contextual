@@ -1,5 +1,10 @@
 (in-package :contextual-utility)
 
+(defun fold (func init lst)
+  (loop for item in lst
+        for accum = (funcall func init item) then (funcall func accum item)
+        finally (return accum)))
+
 (defun get-argument-or-slot-value (args keyword obj slot-name)
   "Return a value from the arguments or a bound slot with preference to the
 the value from the arguments.  If the slot is not bound and the keyword does

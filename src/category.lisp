@@ -38,12 +38,9 @@
     (setf (slot-value obj 'comp) comp)))
 
 (defun <<< (&rest fs)
-  (let ((n (length fs)))
-    (case n
-      ((2) (comp (car fs) (cadr fs)))
-      ((1) (car fs))
-      ((0) (id))
-      (otherwise (fold #'comp (car fs) (cdr fs))))))
+  "Right to left composition of category members"
+  (fold #'comp (id) fs))
 
 (defun >>> (&rest fs)
+  "Left to right composition of category members"
     (apply #'<<< (reverse fs)))
