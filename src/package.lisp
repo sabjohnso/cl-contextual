@@ -140,7 +140,29 @@
    #:split
    #:fst
    #:snd
-   #:fanout))
+   #:fanout)
+
+  ;; Either
+  (:export
+   #:make-either-context
+   #:either
+   #:either-p
+   #:left
+   #:left-p
+   #:right
+   #:right-p
+   #:left-value
+   #:right-value
+   #:either-swap
+   #:either-untag)
+
+  ;; Arrow Choice
+  (:export
+   #:arrow-choice-operators
+   #:choose-either
+   #:choose-left
+   #:choose-right
+   #:fanin))
 
 (defpackage :contextual-bare
   (:use :cl :contextual)

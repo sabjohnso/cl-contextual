@@ -2,11 +2,14 @@
 
 (defgeneric comp-func (obj))
 (defun ask-comp () (ctx-asks #'comp-func))
-(defun comp (ccat0 ccat1)
+(defun comp2 (ccat0 ccat1)
   (let-app/ctx ((comp (ask-comp))
-                (cat0 (ctx-injest ccat0))
-                (cat1 (ctx-injest ccat1)))
+                 (cat0 (ctx-injest ccat0))
+                 (cat1 (ctx-injest ccat1)))
     (funcall comp cat0 cat1)))
+
+(defun comp (&rest cats)
+  (fold #'comp2 (id) cats))
 
 (defgeneric id-value (obj))
 (defun ask-id () (ctx-asks #'id-value))

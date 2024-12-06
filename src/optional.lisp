@@ -21,12 +21,18 @@
 (defun optional-flatmap (f mx)
   (declare (type optional-constructor f)
            (type optional mx))
+
   (the optional
     (etypecase mx
       (just (funcall f (just-value mx)))
       (none (none)))))
 
+(defun optional-fail (string)
+  (declare (ignore string))
+  (none))
+
 (defun make-optional-context ()
-  (make-instance 'monad-operators
+  (make-instance 'monad-fail-operators
     :pure #'just
-    :flatmap #'optional-flatmap))
+    :flatmap #'optional-flatmap
+    :fail #'optional-fail))
